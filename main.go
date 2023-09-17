@@ -161,6 +161,40 @@ func main() {
 		c.JSON(http.StatusOK, estudios)
 	})
 
+	// Create a estudio
+	router.POST("/estudios", func(c *gin.Context) {
+
+		type Estudio struct {
+			proprietario_id       int
+			nome                  string
+			email                 string
+			horario_funcionamento string
+			endereco              string
+			localizacao           string
+			telefone              string
+			descricao             string
+			taxa_agendamento      float32
+		}
+
+		var requestBody Estudio
+
+		err := c.ShouldBindJSON(&requestBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var result interface{}
+		erro := client.DB.From("estudios").Insert(requestBody).Execute(&result)
+
+		if erro != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": erro.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
+	})
+
 	// Start the Gin server
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))
