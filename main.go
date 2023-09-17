@@ -146,6 +146,21 @@ func main() {
 		c.JSON(http.StatusOK, estudio)
 	})
 
+	// Get estudios
+	router.GET("/estudios", func(c *gin.Context) {
+
+		var estudios []interface{}
+
+		var err = client.DB.From("estudios").Select("*").Execute(&estudios)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, estudios)
+	})
+
 	// Start the Gin server
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))
