@@ -43,20 +43,24 @@ func main() {
 	// Create a Gin router
 	router := gin.Default()
 
+	// Create a group, all routes initialized with this group will pass through the 
+	// jwtTokenCheck middleware function and be located like: /private/...
 	private := router.Group("/private", jwtTokenCheck);
 	
+	//Initialize a single supabase client instead of one for each query received
+	client := supabase.CreateClient(supabaseURL, supabaseKey)
 	// Route for user sign-up
 	router.POST("/signup", func(c *gin.Context) {
+		// Defines the input data and validation
 		var requestBody struct {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 		}
-
+		// Bind the request to the defined model and throw error if some validation fails.
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
 
 		// Create user credentials
 		credentials := supabase.UserCredentials{
@@ -86,7 +90,6 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
 
 		// Create user credentials
 		credentials := supabase.UserCredentials{
