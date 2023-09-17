@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"strings"
+
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
 )
@@ -15,38 +16,37 @@ func main() {
 	supabaseURL := "https://pfzlboeaonsookzcnniv.supabase.co"
 	supabaseKey := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmemxib2Vhb25zb29remNubml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTIwNjI3NTYsImV4cCI6MjAwNzYzODc1Nn0.KuEEX9EBIQmLTA02iPtqqNIewDmXITDxnIfD4qEqTN8"
 
-	extractBearerToken := func (header string) (string, error) {
+	extractBearerToken := func(header string) (string, error) {
 		if header == "" {
 			return "", errors.New("bad header value given")
 		}
-	
+
 		jwtToken := strings.Split(header, " ")
 		if len(jwtToken) != 2 {
 			return "", errors.New("incorrectly formatted authorization header")
 		}
-	
+
 		return jwtToken[1], nil
 	}
-	
-	
-	jwtTokenCheck := func (c *gin.Context) {
+
+	jwtTokenCheck := func(c *gin.Context) {
 		jwtToken, err := extractBearerToken(c.GetHeader("Authorization"))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		client := supabase.CreateClient(supabaseURL, supabaseKey)
-		client.DB.AddHeader("Authorization", "Bearer "+jwtToken);
+		client.DB.AddHeader("Authorization", "Bearer "+jwtToken)
 		c.Next()
 	}
 
 	// Create a Gin router
 	router := gin.Default()
 
-	// Create a group, all routes initialized with this group will pass through the 
+	// Create a group, all routes initialized with this group will pass through the
 	// jwtTokenCheck middleware function and be located like: /private/...
-	private := router.Group("/private", jwtTokenCheck);
-	
+	private := router.Group("/private", jwtTokenCheck)
+
 	//Initialize a single supabase client instead of one for each query received
 	client := supabase.CreateClient(supabaseURL, supabaseKey)
 	// Route for user sign-up
@@ -119,12 +119,31 @@ func main() {
 		client := supabase.CreateClient(supabaseURL, supabaseKey)
 		err := client.DB.From("usuarios").Insert(row).Execute(&results)
 
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 
-			c.JSON(http.StatusCreated, results)
+		c.JSON(http.StatusCreated, results)
+	})
+
+	// Estudios Logic
+
+	// Get estudio by ID
+	router.GET("/estudios/:id", func(c *gin.Context) {
+
+		var estudioId = c.Param("id")
+
+		var estudio interface{}
+
+		var err = client.DB.From("estudios").Select("*").Single().Eq("id", estudioId).Execute(&estudio)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, estudio)
 	})
 
 	// Start the Gin server
@@ -134,12 +153,12 @@ func main() {
 
 // Define the Usuario struct to match your database structure
 type Usuario struct {
-  Nome    string `json:"nome"`
+	Nome string `json:"nome"`
 }
 
 // Helper function to convert Usuario struct to map for Supabase
 func tatuadorToMap(usuario Usuario) map[string]interface{} {
 	return map[string]interface{}{
-		"nome":      usuario.Nome,
+		"nome": usuario.Nome,
 	}
 }
