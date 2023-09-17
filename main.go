@@ -164,19 +164,20 @@ func main() {
 	// Create a estudio
 	router.POST("/estudios", func(c *gin.Context) {
 
-		type Estudio struct {
-			proprietario_id       int
-			nome                  string
-			email                 string
-			horario_funcionamento string
-			endereco              string
-			localizacao           string
-			telefone              string
-			descricao             string
-			taxa_agendamento      float32
-		}
+		// type Estudio struct {
+		// 	ProprietarioId       int     `json:"proprietario_id"`
+		// 	Nome                 string  `json:"nome"`
+		// 	Email                string  `json:"email"`
+		// 	HorarioFuncionamento string  `json:"horario_funcionamento"`
+		// 	Endereco             string  `json:"endereco"`
+		// 	Localizacao          string  `json:"localizacao"`
+		// 	Telefone             string  `json:"telefone"`
+		// 	Descricao            string  `json:"descricao"`
+		// 	TaxaAgendamento      float32 `json:"taxa_agendamento"`
+		// }
 
-		var requestBody Estudio
+		// var requestBody = Estudio{}
+		var requestBody interface{}
 
 		err := c.ShouldBindJSON(&requestBody)
 		if err != nil {
@@ -184,11 +185,44 @@ func main() {
 			return
 		}
 
+		// var body = Estudio{
+		// 	ProprietarioId:       requestBody.ProprietarioId,
+		// 	Nome:                 requestBody.Nome,
+		// 	Email:                requestBody.Email,
+		// 	HorarioFuncionamento: requestBody.HorarioFuncionamento,
+		// 	Endereco:             requestBody.Endereco,
+		// 	Localizacao:          requestBody.Localizacao,
+		// 	Telefone:             requestBody.Telefone,
+		// 	Descricao:            requestBody.Descricao,
+		// 	TaxaAgendamento:      requestBody.TaxaAgendamento,
+		// }
+
 		var result interface{}
 		erro := client.DB.From("estudios").Insert(requestBody).Execute(&result)
 
 		if erro != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": erro.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
+	})
+
+	router.DELETE("estudios/:id", func(c *gin.Context) {
+		var estudioId = c.Param("id")
+
+		var result interface{}
+
+		var errSelect = client.DB.From("estudios").Select("*").Single().Eq("id", estudioId).Execute(&result)
+		if errSelect != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errSelect.Error()})
+			return
+		}
+
+		var deleteReturn interface{}
+		var err = client.DB.From("estudios").Delete().Eq("id", estudioId).Execute(&deleteReturn)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
