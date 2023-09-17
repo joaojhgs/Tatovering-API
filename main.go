@@ -229,6 +229,32 @@ func main() {
 		c.JSON(http.StatusOK, result)
 	})
 
+	router.PATCH("estudios/:id", func(c *gin.Context) {
+		var estudioId = c.Param("id")
+
+		var requestBody interface{}
+
+		errBody := c.ShouldBindJSON(&requestBody)
+		if errBody != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errBody.Error()})
+			return
+		}
+
+		var result []interface{}
+		var err = client.DB.From("estudios").Update(requestBody).Eq("id", estudioId).Execute(&result)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if len(result) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Estudio não encontrado"})
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
+	})
+
 	// Start the Gin server
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))
