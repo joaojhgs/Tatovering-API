@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+	_ "tatovering/src/controllers"
+	_ "tatovering/src/models"
 
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
@@ -16,16 +18,106 @@ func main() {
 	// Create a Gin router
 	router := gin.Default()
 
+	/*********************************************************
+	* 				   	  CRUD TATUAGENS 				   	 *
+	**********************************************************/
+	router.POST("/tatuagens", func(c *gin.Context) {
+
+		var requestBody struct {
+			ClienteId     int     `json:"cliente_id"`
+			TatuadorId    int     `json:"tatuador_id"`
+			AgendamentoId int     `json:"agendamento_id"`
+			Preco         float32 `json:"preco"`
+			Desenho       string  `json:"desenho"`
+			Tamaho        int     `json:"tamanho"`
+			Cor           string  `json:"cor"`
+			Estilo        string  `json:"estilo"`
+		}
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		row := Tatuagem{
+			ClienteId:     requestBody.ClienteId,
+			TatuadorId:    requestBody.TatuadorId,
+			AgendamentoId: requestBody.AgendamentoId,
+			Preco:         requestBody.Preco,
+			Desenho:       requestBody.Desenho,
+			Tamaho:        requestBody.Tamaho,
+			Cor:           requestBody.Cor,
+			Estilo:        requestBody.Estilo,
+		}
+
+		var results []Tatuagem
+
+		// creating a conection with supabase
+		client := supabase.CreateClient(supabaseURL, supabaseKey)
+
+		// inserting data and receive error id exist
+		err := client.DB.From("tatuagens").Insert(row).Execute(&results)
+
+		// chack error returned
+		if err != nil {
+			// ginh.H used to returnd a json file
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// return a json file
+		c.JSON(http.StatusOK, results)
+
+	})
+
+	// Find all tattoo by tattoo artist
+	router.GET("/tatuagens/:id", func(c *gin.Context) {
+		tatuadorId := c.Param("id")
+
+		var results []Tatuagem
+
+		client := supabase.CreateClient(supabaseURL, supabaseKey)
+		err := client.DB.From("tatuagens").Select("*").Eq("tatuador_id", tatuadorId).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, results)
+
+	})
+
+	// Delete tattoo per id tattoo artist
+	router.DELETE("/tatuagens/:id", func(c *gin.Context) {
+		tatuahemId := c.Param("id")
+
+		var results Tatuagem
+		client := supabase.CreateClient(supabaseURL, supabaseKey)
+		err := client.DB.From("tatuagens").Delete().Eq("id", tatuahemId).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, results)
+	})
+
+	/*********************************************************
+	* 				   	  CRUD USUARIOS 				   	 *
+	**********************************************************/
 	// Define CRUD routes for "usuarios"
 	router.POST("/usuarios", func(c *gin.Context) {
+
 		// Create a new usuario
-    row := Usuario{
-      Nome: "Gabriel Medrado",
-    }
-    var results []Usuario
-    client := supabase.CreateClient(supabaseURL, supabaseKey)
-    err := client.DB.From("usuarios").Insert(row).Execute(&results)
-    
+		row := Usuario{
+			Nome: "Gabriel Medrado",
+		}
+		var results []Usuario
+		client := supabase.CreateClient(supabaseURL, supabaseKey)
+		err := client.DB.From("usuarios").Insert(row).Execute(&results)
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -95,12 +187,23 @@ func main() {
 
 // Define the Usuario struct to match your database structure
 type Usuario struct {
-  Nome    string `json:"nome"`
+	Nome string `json:"nome"`
+}
+
+type Tatuagem struct {
+	ClienteId     int     `json:"cliente_id"`
+	TatuadorId    int     `json:"tatuador_id"`
+	AgendamentoId int     `json:"agendamento_id"`
+	Preco         float32 `json:"preco"`
+	Desenho       string  `json:"desenho"`
+	Tamaho        int     `json:"tamanho"`
+	Cor           string  `json:"cor"`
+	Estilo        string  `json:"estilo"`
 }
 
 // Helper function to convert Usuario struct to map for Supabase
 func tatuadorToMap(usuario Usuario) map[string]interface{} {
 	return map[string]interface{}{
-		"nome":      usuario.Nome,
+		"nome": usuario.Nome,
 	}
 }
