@@ -141,6 +141,51 @@ func main() {
 		c.JSON(http.StatusCreated, results)
 	})
 
+	private.POST("/usuarios", func(c *gin.Context) {
+		// Create a new usuario
+		var row Usuario
+		jwtToken, errToken := extractBearerToken(c.GetHeader("Authorization"))
+		if errToken != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errToken.Error()})
+			return
+		}
+		ctx := context.Background()
+		user, _ := client.Auth.User(ctx, jwtToken)
+		if user == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Authentication token is invalid"})
+			return
+		}
+
+		if errBind := c.ShouldBindJSON(&row); errBind != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errBind.Error()})
+			return
+		}
+		row.Id = user.ID
+
+		var results []Usuario
+		errInsert := client.DB.From("usuarios").Insert(row).Execute(&results)
+
+		if errInsert != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errInsert.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, results)
+	})
+
+	router.GET("/usuarios/:id", func(c *gin.Context) {
+		var usuarioId = c.Param("id")
+		var results Usuario
+		errGet := client.DB.From("usuarios").Select("*").Single().Eq("id", estudioId).Execute(&results)
+
+		if errGet != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errGet.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, results)
+	})
+
 	// Start the Gin server
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))
