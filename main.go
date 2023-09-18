@@ -22,6 +22,12 @@ func main() {
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_KEY")
 
+	// Create a Gin router
+	router := gin.Default()
+	
+	//Initialize a single supabase client instead of one for each query received
+	client := supabase.CreateClient(supabaseURL, supabaseKey)
+
 	extractBearerToken := func (header string) (string, error) {
 		if header == "" {
 			return "", errors.New("bad header value given")
@@ -34,21 +40,16 @@ func main() {
 	
 		return jwtToken[1], nil
 	}
-	
-	
+
 	jwtTokenCheck := func (c *gin.Context) {
 		jwtToken, err := extractBearerToken(c.GetHeader("Authorization"))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
 		client.DB.AddHeader("Authorization", "Bearer "+jwtToken);
 		c.Next()
 	}
-
-	// Create a Gin router
-	router := gin.Default()
 
 	// Create a group, all routes initialized with this group will pass through the 
 	// jwtTokenCheck middleware function and be located like: /private/...
@@ -56,6 +57,36 @@ func main() {
 	
 	//Initialize a single supabase client instead of one for each query received
 	client := supabase.CreateClient(supabaseURL, supabaseKey)
+
+	// Route for user sign-up
+	router.POST("/signup", func(c *gin.Context) {
+		// Defines the input data and validation
+		var requestBody struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+		// Bind the request to the defined model and throw error if some validation fails.
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Create user credentials
+		credentials := supabase.UserCredentials{
+			Email:    requestBody.Email,
+			Password: requestBody.Password,
+		}
+		ctx := context.Background()
+		// Sign up the user with Supabase
+		user, err := client.Auth.SignUp(ctx, credentials)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"user": user})
+	})
 
 	// Route for user sign-in
 	router.POST("/signin", func(c *gin.Context) {
