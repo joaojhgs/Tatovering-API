@@ -114,13 +114,13 @@ func main() {
 		var row Usuario
 		jwtToken, errToken := extractBearerToken(c.GetHeader("Authorization"))
 		if errToken != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": errToken.Error()})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errToken.Error()})
 			return
 		}
 		ctx := context.Background()
-		user, errAuth := client.Auth.User(ctx, jwtToken)
-		if errAuth != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": errAuth.Error()})
+		user, _ := client.Auth.User(ctx, jwtToken)
+		if user == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Authentication token is invalid"})
 			return
 		}
 
@@ -129,7 +129,6 @@ func main() {
 			return
 		}
 		row.Id = user.ID
-		fmt.Println(row)
 
 		var results []Usuario
 		errInsert := client.DB.From("usuarios").Insert(row).Execute(&results)
