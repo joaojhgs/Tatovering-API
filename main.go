@@ -16,6 +16,12 @@ func main() {
 	supabaseURL := "https://pfzlboeaonsookzcnniv.supabase.co"
 	supabaseKey := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmemxib2Vhb25zb29remNubml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTIwNjI3NTYsImV4cCI6MjAwNzYzODc1Nn0.KuEEX9EBIQmLTA02iPtqqNIewDmXITDxnIfD4qEqTN8"
 
+	// Create a Gin router
+	router := gin.Default()
+
+	//Initialize a single supabase client instead of one for each query received
+	client := supabase.CreateClient(supabaseURL, supabaseKey)
+
 	extractBearerToken := func(header string) (string, error) {
 		if header == "" {
 			return "", errors.New("bad header value given")
@@ -35,20 +41,14 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
 		client.DB.AddHeader("Authorization", "Bearer "+jwtToken)
 		c.Next()
 	}
-
-	// Create a Gin router
-	router := gin.Default()
 
 	// Create a group, all routes initialized with this group will pass through the
 	// jwtTokenCheck middleware function and be located like: /private/...
 	private := router.Group("/private", jwtTokenCheck)
 
-	//Initialize a single supabase client instead of one for each query received
-	client := supabase.CreateClient(supabaseURL, supabaseKey)
 	// Route for user sign-up
 	router.POST("/signup", func(c *gin.Context) {
 		// Defines the input data and validation
