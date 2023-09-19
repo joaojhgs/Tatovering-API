@@ -1,37 +1,88 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
-	_ "tatovering/src/controllers"
-	_ "tatovering/src/models"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
 )
 
 func main() {
-	// Initialize your Supabase client
 	supabaseURL := "https://pfzlboeaonsookzcnniv.supabase.co"
 	supabaseKey := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmemxib2Vhb25zb29remNubml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTIwNjI3NTYsImV4cCI6MjAwNzYzODc1Nn0.KuEEX9EBIQmLTA02iPtqqNIewDmXITDxnIfD4qEqTN8"
 
 	// Create a Gin router
 	router := gin.Default()
+
+	//Initialize a single supabase client instead of one for each query received
 	client := supabase.CreateClient(supabaseURL, supabaseKey)
 
-	/*********************************************************
-	* 				   	  CRUD TATUAGENS 				   	 *
-	**********************************************************/
-	router.POST("/tatuagens", func(c *gin.Context) {
+	extractBearerToken := func(header string) (string, error) {
+		if header == "" {
+			return "", errors.New("Missing authorization header")
+		}
 
+		jwtToken := strings.Split(header, " ")
+		if len(jwtToken) != 2 {
+			return "", errors.New("Incorrectly formatted authorization header")
+		}
+
+		return jwtToken[1], nil
+	}
+
+	jwtTokenCheck := func(c *gin.Context) {
+		jwtToken, err := extractBearerToken(c.GetHeader("Authorization"))
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		client.DB.AddHeader("Authorization", "Bearer "+jwtToken)
+		c.Next()
+	}
+
+	// Create a group, all routes initialized with this group will pass through the
+	// jwtTokenCheck middleware function and be located like: /private/...
+	private := router.Group("/", jwtTokenCheck)
+
+	// Route for user sign-up
+	router.POST("/signup", func(c *gin.Context) {
+		// Defines the input data and validation
 		var requestBody struct {
-			TatuadorId    int     `json:"tatuador_id"`
-			AgendamentoId int     `json:"agendamento_id"`
-			Preco         float32 `json:"preco"`
-			Desenho       string  `json:"desenho"`
-			Tamaho        int     `json:"tamanho"`
-			Cor           string  `json:"cor"`
-			Estilo        string  `json:"estilo"`
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+		// Bind the request to the defined model and throw error if some validation fails.
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Create user credentials
+		credentials := supabase.UserCredentials{
+			Email:    requestBody.Email,
+			Password: requestBody.Password,
+		}
+		ctx := context.Background()
+		// Sign up the user with Supabase
+		user, err := client.Auth.SignUp(ctx, credentials)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"user": user})
+	})
+
+	// Route for user sign-in
+	router.POST("/signin", func(c *gin.Context) {
+		var requestBody struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
 		}
 
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
@@ -39,20 +90,89 @@ func main() {
 			return
 		}
 
-		row := Tatuagem{
-			TatuadorId:    requestBody.TatuadorId,
-			AgendamentoId: requestBody.AgendamentoId,
-			Preco:         requestBody.Preco,
-			Desenho:       requestBody.Desenho,
-			Tamaho:        requestBody.Tamaho,
-			Cor:           requestBody.Cor,
-			Estilo:        requestBody.Estilo,
+		// Create user credentials
+		credentials := supabase.UserCredentials{
+			Email:    requestBody.Email,
+			Password: requestBody.Password,
+		}
+
+		ctx := context.Background()
+		// Sign up the user with Supabase
+		user, err := client.Auth.SignIn(ctx, credentials)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"user": user})
+	})
+
+	// Define CRUD routes for "usuarios"
+	private.POST("/usuarios", func(c *gin.Context) {
+		// Create a new usuario
+		var row Usuario
+
+		if errBind := c.ShouldBindJSON(&row); errBind != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errBind.Error()})
+			return
+		}
+
+		var results []Usuario
+		errInsert := client.DB.From("usuarios").Insert(row).Execute(&results)
+
+		if errInsert != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errInsert.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, results)
+	})
+
+	router.GET("/usuarios/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var user Usuario
+		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, user)
+	})
+
+	private.PATCH("/usuarios/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var user Usuario
+		if err := c.ShouldBindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		var results []Usuario
+		err := client.DB.From("usuarios").Update(user).Eq("id", id).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			return
+		}
+		c.JSON(http.StatusOK, user)
+	})
+
+	/*********************************************************
+	* 				   	  CRUD TATUAGENS 				   	 *
+	**********************************************************/
+	private.POST("/tatuagens", func(c *gin.Context) {
+
+		var requestBody Tatuagem
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 
 		var results []Tatuagem
 
 		// inserting data and receive error if exist
-		err := client.DB.From("tatuagens").Insert(row).Execute(&results)
+		err := client.DB.From("tatuagens").Insert(requestBody).Execute(&results)
 
 		// chack error returned
 		if err != nil {
@@ -66,32 +186,14 @@ func main() {
 
 	})
 
-	router.PATCH("/tatuagens/:id", func(c *gin.Context) {
+	private.PATCH("/tatuagens/:id", func(c *gin.Context) {
 		tatuagemId := c.Param("id")
 
-		var requestBody struct {
-			TatuadorId    int     `json:"tatuador_id"`
-			AgendamentoId int     `json:"agendamento_id"`
-			Preco         float32 `json:"preco"`
-			Desenho       string  `json:"desenho"`
-			Tamaho        int     `json:"tamanho"`
-			Cor           string  `json:"cor"`
-			Estilo        string  `json:"estilo"`
-		}
+		var requestBody Tatuagem
 
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
-		}
-
-		row := Tatuagem{
-			TatuadorId:    requestBody.TatuadorId,
-			AgendamentoId: requestBody.AgendamentoId,
-			Preco:         requestBody.Preco,
-			Desenho:       requestBody.Desenho,
-			Tamaho:        requestBody.Tamaho,
-			Cor:           requestBody.Cor,
-			Estilo:        requestBody.Estilo,
 		}
 
 		var results Tatuagem
@@ -102,7 +204,7 @@ func main() {
 			return
 		}
 
-		updateErr := client.DB.From("tatuagens").Update(row).Eq("id", tatuagemId)
+		updateErr := client.DB.From("tatuagens").Update(requestBody).Eq("id", tatuagemId)
 
 		if updateErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"errror": err.Error()})
@@ -132,7 +234,7 @@ func main() {
 	})
 
 	// Delete tattoo per id tattoo artist
-	router.DELETE("/tatuagens/:id", func(c *gin.Context) {
+	private.DELETE("/tatuagens/:id", func(c *gin.Context) {
 		tatuagemId := c.Param("id")
 
 		var results Tatuagem
@@ -145,82 +247,6 @@ func main() {
 
 		c.JSON(http.StatusOK, results)
 	})
-
-	/*********************************************************
-	* 				   	  CRUD USUARIOS 				   	 *
-	**********************************************************/
-	// Define CRUD routes for "usuarios"
-	router.POST("/usuarios", func(c *gin.Context) {
-
-		// Create a new usuario
-		row := Usuario{
-			Nome: "Gabriel Medrado",
-		}
-		var results []Usuario
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
-		err := client.DB.From("usuarios").Insert(row).Execute(&results)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, results)
-	})
-
-	// router.GET("/usuarios/:id", func(c *gin.Context) {
-	// 	// Get a usuario by ID
-	// 	tatuadorID := c.Param("id")
-	// 	resp, err := client.
-	// 		Table("usuarios").
-	// 		Select("*").
-	// 		Equals("id", tatuadorID).
-	// 		Single()
-	// 	if err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-
-	// 	c.JSON(http.StatusOK, resp)
-	// })
-
-	// router.PUT("/usuarios/:id", func(c *gin.Context) {
-	// 	// Update a usuario by ID
-	// 	tatuadorID := c.Param("id")
-	// 	var usuario Usuario // Define the Usuario struct as needed
-	// 	if err := c.BindJSON(&usuario); err != nil {
-	// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-
-	// 	resp, err := client.
-	// 		Table("usuarios").
-	// 		Update(tatuadorToMap(usuario)).
-	// 		Equals("id", tatuadorID).
-	// 		Single()
-	// 	if err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-
-	// 	c.JSON(http.StatusOK, resp)
-	// })
-
-	// router.DELETE("/usuarios/:id", func(c *gin.Context) {
-	// 	// Delete a usuario by ID
-	// 	tatuadorID := c.Param("id")
-	// 	resp, err := client.
-	// 		Table("usuarios").
-	// 		Delete().
-	// 		Equals("id", tatuadorID).
-	// 		Single()
-	// 	if err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-
-	// 	c.JSON(http.StatusOK, resp)
-	// })
 
 	// Start the Gin server
 	port := 8080 // Change to the desired port
