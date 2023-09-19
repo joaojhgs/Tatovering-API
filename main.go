@@ -95,10 +95,10 @@ func main() {
 		}
 
 		var results Tatuagem
-		err := client.DB.From("tatuagens").Select("*").Eq("id", tatuagemId).Execute(&results)
+		err := client.DB.From("tatuagens").Select("*").Single().Eq("id", tatuagemId).Execute(&results)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"errror": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
