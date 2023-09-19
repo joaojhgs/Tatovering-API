@@ -255,7 +255,12 @@ func main() {
 
 // Define the Usuario struct to match your database structure
 type Usuario struct {
-	Nome string `json:"nome"`
+	Nome             string `json:"nome"`
+	Telefone_celular string `json:"telefone_celular"`
+	Cpf              string `json:"cpf"`
+	Rg               string `json:"rg"`
+	Status           string `json:"status"`
+	Endereco         string `json:"endereco"`
 }
 
 type Tatuagem struct {
@@ -266,11 +271,4 @@ type Tatuagem struct {
 	Tamaho        int     `json:"tamanho"`
 	Cor           string  `json:"cor"`
 	Estilo        string  `json:"estilo"`
-}
-
-// Helper function to convert Usuario struct to map for Supabase
-func tatuadorToMap(usuario Usuario) map[string]interface{} {
-	return map[string]interface{}{
-		"nome": usuario.Nome,
-	}
 }
