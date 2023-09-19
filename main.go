@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"os"
@@ -23,34 +24,34 @@ func main() {
 
 	// Create a Gin router
 	router := gin.Default()
-	
+
 	//Initialize a single supabase client instead of one for each query received
 	client := supabase.CreateClient(supabaseURL, supabaseKey)
 
-	extractBearerToken := func (header string) (string, error) {
+	extractBearerToken := func(header string) (string, error) {
 		if header == "" {
-			return "", errors.New("bad header value given")
+			return "", errors.New("Missing authorization header")
 		}
-	
+
 		jwtToken := strings.Split(header, " ")
 		if len(jwtToken) != 2 {
-			return "", errors.New("incorrectly formatted authorization header")
+			return "", errors.New("Incorrectly formatted authorization header")
 		}
-	
+
 		return jwtToken[1], nil
 	}
 
-	jwtTokenCheck := func (c *gin.Context) {
+	jwtTokenCheck := func(c *gin.Context) {
 		jwtToken, err := extractBearerToken(c.GetHeader("Authorization"))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		client.DB.AddHeader("Authorization", "Bearer"+jwtToken);
+		client.DB.AddHeader("Authorization", "Bearer "+jwtToken)
 		c.Next()
 	}
 
-	// Create a group, all routes initialized with this group will pass through the 
+	// Create a group, all routes initialized with this group will pass through the
 	// jwtTokenCheck middleware function and be located like: /private/...
 	private := router.Group("/private", jwtTokenCheck);
 	
@@ -120,25 +121,50 @@ func main() {
 	// Define CRUD routes for "usuarios"
 	private.POST("/usuarios", func(c *gin.Context) {
 		// Create a new usuario
-		var usuario Usuario
+		var row Usuario
 
-		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'usuario'
-		if err := c.BindJSON(&usuario); err != nil {
-			// Em caso de erro, responder com status de erro e mensagem
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if errBind := c.ShouldBindJSON(&row); errBind != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errBind.Error()})
 			return
 		}
 
 		var results []Usuario
+		errInsert := client.DB.From("usuarios").Insert(row).Execute(&results)
 
-		err := client.DB.From("usuarios").Insert(usuario).Execute(&results)
+		if errInsert != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errInsert.Error()})
+			return
+		}
 
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
+		c.JSON(http.StatusCreated, results)
+	})
 
-			c.JSON(http.StatusCreated, results)
+	router.GET("/usuarios/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var user Usuario
+		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, user)
+	})
+
+	private.PATCH("/usuarios/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var user Usuario
+		if err := c.ShouldBindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		var results []Usuario
+		err := client.DB.From("usuarios").Update(user).Eq("id", id).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			return
+		}
+		c.JSON(http.StatusOK, user)
 	})
 
 	router.GET("/tatuadores/:tatuador_id", func(c *gin.Context) {
