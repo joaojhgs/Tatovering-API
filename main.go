@@ -17,6 +17,7 @@ func main() {
 
 	// Create a Gin router
 	router := gin.Default()
+	client := supabase.CreateClient(supabaseURL, supabaseKey)
 
 	/*********************************************************
 	* 				   	  CRUD TATUAGENS 				   	 *
@@ -24,7 +25,6 @@ func main() {
 	router.POST("/tatuagens", func(c *gin.Context) {
 
 		var requestBody struct {
-			ClienteId     int     `json:"cliente_id"`
 			TatuadorId    int     `json:"tatuador_id"`
 			AgendamentoId int     `json:"agendamento_id"`
 			Preco         float32 `json:"preco"`
@@ -40,7 +40,6 @@ func main() {
 		}
 
 		row := Tatuagem{
-			ClienteId:     requestBody.ClienteId,
 			TatuadorId:    requestBody.TatuadorId,
 			AgendamentoId: requestBody.AgendamentoId,
 			Preco:         requestBody.Preco,
@@ -52,10 +51,7 @@ func main() {
 
 		var results []Tatuagem
 
-		// creating a conection with supabase
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
-
-		// inserting data and receive error id exist
+		// inserting data and receive error if exist
 		err := client.DB.From("tatuagens").Insert(row).Execute(&results)
 
 		// chack error returned
@@ -70,31 +66,77 @@ func main() {
 
 	})
 
+	router.PATCH("/tatuagens/:id", func(c *gin.Context) {
+		tatuagemId := c.Param("id")
+
+		var requestBody struct {
+			TatuadorId    int     `json:"tatuador_id"`
+			AgendamentoId int     `json:"agendamento_id"`
+			Preco         float32 `json:"preco"`
+			Desenho       string  `json:"desenho"`
+			Tamaho        int     `json:"tamanho"`
+			Cor           string  `json:"cor"`
+			Estilo        string  `json:"estilo"`
+		}
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		row := Tatuagem{
+			TatuadorId:    requestBody.TatuadorId,
+			AgendamentoId: requestBody.AgendamentoId,
+			Preco:         requestBody.Preco,
+			Desenho:       requestBody.Desenho,
+			Tamaho:        requestBody.Tamaho,
+			Cor:           requestBody.Cor,
+			Estilo:        requestBody.Estilo,
+		}
+
+		var results Tatuagem
+		err := client.DB.From("tatuagens").Select("*").Eq("id", tatuagemId).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"errror": err.Error()})
+			return
+		}
+
+		updateErr := client.DB.From("tatuagens").Update(row).Eq("id", tatuagemId)
+
+		if updateErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"errror": err.Error()})
+		}
+
+		c.JSON(http.StatusOK, results)
+	})
+
 	// Find all tattoo by tattoo artist
 	router.GET("/tatuagens/:id", func(c *gin.Context) {
+		// extract of param the tatuador id
 		tatuadorId := c.Param("id")
 
+		// variable of return function execute databse
 		var results []Tatuagem
 
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
 		err := client.DB.From("tatuagens").Select("*").Eq("tatuador_id", tatuadorId).Execute(&results)
 
+		// tratament error case exists
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
+		// response
 		c.JSON(http.StatusOK, results)
-
 	})
 
 	// Delete tattoo per id tattoo artist
 	router.DELETE("/tatuagens/:id", func(c *gin.Context) {
-		tatuahemId := c.Param("id")
+		tatuagemId := c.Param("id")
 
 		var results Tatuagem
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
-		err := client.DB.From("tatuagens").Delete().Eq("id", tatuahemId).Execute(&results)
+		err := client.DB.From("tatuagens").Delete().Eq("id", tatuagemId).Execute(&results)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -191,7 +233,6 @@ type Usuario struct {
 }
 
 type Tatuagem struct {
-	ClienteId     int     `json:"cliente_id"`
 	TatuadorId    int     `json:"tatuador_id"`
 	AgendamentoId int     `json:"agendamento_id"`
 	Preco         float32 `json:"preco"`
