@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"strings"
+
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
 )
@@ -17,36 +18,36 @@ func main() {
 
 	// Create a Gin router
 	router := gin.Default()
-	
+
 	//Initialize a single supabase client instead of one for each query received
 	client := supabase.CreateClient(supabaseURL, supabaseKey)
 
-	extractBearerToken := func (header string) (string, error) {
+	extractBearerToken := func(header string) (string, error) {
 		if header == "" {
 			return "", errors.New("Missing authorization header")
 		}
-	
+
 		jwtToken := strings.Split(header, " ")
 		if len(jwtToken) != 2 {
 			return "", errors.New("Incorrectly formatted authorization header")
 		}
-	
+
 		return jwtToken[1], nil
 	}
 
-	jwtTokenCheck := func (c *gin.Context) {
+	jwtTokenCheck := func(c *gin.Context) {
 		jwtToken, err := extractBearerToken(c.GetHeader("Authorization"))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		client.DB.AddHeader("Authorization", "Bearer "+jwtToken);
+		client.DB.AddHeader("Authorization", "Bearer "+jwtToken)
 		c.Next()
 	}
 
-	// Create a group, all routes initialized with this group will pass through the 
+	// Create a group, all routes initialized with this group will pass through the
 	// jwtTokenCheck middleware function and be located like: /private/...
-	private := router.Group("/private", jwtTokenCheck);
+	private := router.Group("/", jwtTokenCheck)
 
 	// Route for user sign-up
 	router.POST("/signup", func(c *gin.Context) {
@@ -112,55 +113,11 @@ func main() {
 	private.POST("/usuarios", func(c *gin.Context) {
 		// Create a new usuario
 		var row Usuario
-		jwtToken, errToken := extractBearerToken(c.GetHeader("Authorization"))
-		if errToken != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errToken.Error()})
-			return
-		}
-		ctx := context.Background()
-		user, _ := client.Auth.User(ctx, jwtToken)
-		if user == nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Authentication token is invalid"})
-			return
-		}
 
 		if errBind := c.ShouldBindJSON(&row); errBind != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": errBind.Error()})
 			return
 		}
-		row.Id = user.ID
-
-		var results []Usuario
-		errInsert := client.DB.From("usuarios").Insert(row).Execute(&results)
-
-		if errInsert != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": errInsert.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, results)
-	})
-
-	private.POST("/usuarios", func(c *gin.Context) {
-		// Create a new usuario
-		var row Usuario
-		jwtToken, errToken := extractBearerToken(c.GetHeader("Authorization"))
-		if errToken != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errToken.Error()})
-			return
-		}
-		ctx := context.Background()
-		user, _ := client.Auth.User(ctx, jwtToken)
-		if user == nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Authentication token is invalid"})
-			return
-		}
-
-		if errBind := c.ShouldBindJSON(&row); errBind != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errBind.Error()})
-			return
-		}
-		row.Id = user.ID
 
 		var results []Usuario
 		errInsert := client.DB.From("usuarios").Insert(row).Execute(&results)
@@ -174,16 +131,31 @@ func main() {
 	})
 
 	router.GET("/usuarios/:id", func(c *gin.Context) {
-		var usuarioId = c.Param("id")
-		var results Usuario
-		errGet := client.DB.From("usuarios").Select("*").Single().Eq("id", estudioId).Execute(&results)
-
-		if errGet != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": errGet.Error()})
+		id := c.Param("id")
+		var user Usuario
+		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		c.JSON(http.StatusOK, user)
+	})
 
-		c.JSON(http.StatusCreated, results)
+	private.PATCH("/usuarios/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var user Usuario
+		if err := c.ShouldBindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		var results []Usuario
+		err := client.DB.From("usuarios").Update(user).Eq("id", id).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			return
+		}
+		c.JSON(http.StatusOK, user)
 	})
 
 	// Start the Gin server
@@ -193,11 +165,11 @@ func main() {
 
 // Define the Usuario struct to match your database structure
 type Usuario struct {
-  Id    string `json:"id"`;
-  Nome    string `json:"nome"`;
-  Telefone_celular	string `json:"telefone_celular"`;
-  Cpf string `json:"cpf"`;
-  Rg string `json:"rg"`;
-  Status string `json:"status"`;
-  Endereco string `json:"endereco"`;
+	Id               string `json:"id"`
+	Nome             string `json:"nome"`
+	Telefone_celular string `json:"telefone_celular"`
+	Cpf              string `json:"cpf"`
+	Rg               string `json:"rg"`
+	Status           string `json:"status"`
+	Endereco         string `json:"endereco"`
 }
