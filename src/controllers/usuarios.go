@@ -13,7 +13,7 @@ func getAlbums(c *gin.Context) {
 		{ID: "2", Title: "Jeru", Artist: "Gerry Mulligan", Price: 17.99},
 		{ID: "3", Title: "Sarah Vaughan and Clifford Brown", Artist: "Sarah Vaughan", Price: 39.99},
 	}
-    c.IndentedJSON(http.StatusOK, albums)
+	c.IndentedJSON(http.StatusOK, albums)
 }
 // type TagController struct {
 // 	tagService service.TagsService

@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-	// Initialize your Supabase client
 	supabaseURL := "https://pfzlboeaonsookzcnniv.supabase.co"
 	supabaseKey := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmemxib2Vhb25zb29remNubml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTIwNjI3NTYsImV4cCI6MjAwNzYzODc1Nn0.KuEEX9EBIQmLTA02iPtqqNIewDmXITDxnIfD4qEqTN8"
 
@@ -158,6 +157,97 @@ func main() {
 		c.JSON(http.StatusOK, user)
 	})
 
+	/*********************************************************
+	* 				   	  CRUD TATUAGENS 				   	 *
+	**********************************************************/
+	private.POST("/tatuagens", func(c *gin.Context) {
+
+		var requestBody Tatuagem
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var results []Tatuagem
+
+		// inserting data and receive error if exist
+		err := client.DB.From("tatuagens").Insert(requestBody).Execute(&results)
+
+		// chack error returned
+		if err != nil {
+			// ginh.H used to returnd a json file
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// return a json file
+		c.JSON(http.StatusOK, results)
+
+	})
+
+	private.PATCH("/tatuagens/:id", func(c *gin.Context) {
+		tatuagemId := c.Param("id")
+
+		var requestBody Tatuagem
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var results Tatuagem
+		err := client.DB.From("tatuagens").Select("*").Single().Eq("id", tatuagemId).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		updateErr := client.DB.From("tatuagens").Update(requestBody).Eq("id", tatuagemId)
+
+		if updateErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"errror": err.Error()})
+		}
+
+		c.JSON(http.StatusOK, results)
+	})
+
+	// Find all tattoo by tattoo artist
+	router.GET("/tatuagens/:id", func(c *gin.Context) {
+		// extract of param the tatuador id
+		tatuadorId := c.Param("id")
+
+		// variable of return function execute databse
+		var results []Tatuagem
+
+		err := client.DB.From("tatuagens").Select("*").Eq("tatuador_id", tatuadorId).Execute(&results)
+
+		// tratament error case exists
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// response
+		c.JSON(http.StatusOK, results)
+	})
+
+	// Delete tattoo per id tattoo artist
+	private.DELETE("/tatuagens/:id", func(c *gin.Context) {
+		tatuagemId := c.Param("id")
+
+		var results Tatuagem
+		err := client.DB.From("tatuagens").Delete().Eq("id", tatuagemId).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, results)
+	})
+
 	// Start the Gin server
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))
@@ -165,11 +255,22 @@ func main() {
 
 // Define the Usuario struct to match your database structure
 type Usuario struct {
-	Id               string `json:"id"`
-	Nome             string `json:"nome"`
-	Telefone_celular string `json:"telefone_celular"`
-	Cpf              string `json:"cpf"`
-	Rg               string `json:"rg"`
-	Status           string `json:"status"`
-	Endereco         string `json:"endereco"`
+	Nome string `json:"nome"`
+}
+
+type Tatuagem struct {
+	TatuadorId    int     `json:"tatuador_id"`
+	AgendamentoId int     `json:"agendamento_id"`
+	Preco         float32 `json:"preco"`
+	Desenho       string  `json:"desenho"`
+	Tamaho        int     `json:"tamanho"`
+	Cor           string  `json:"cor"`
+	Estilo        string  `json:"estilo"`
+}
+
+// Helper function to convert Usuario struct to map for Supabase
+func tatuadorToMap(usuario Usuario) map[string]interface{} {
+	return map[string]interface{}{
+		"nome": usuario.Nome,
+	}
 }
