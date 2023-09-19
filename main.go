@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"os"
-	"github.com/jinzhu/copier"
 	supabase "github.com/nedpals/supabase-go"
 )
 
@@ -47,7 +46,7 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		client.DB.AddHeader("Authorization", "Bearer "+jwtToken);
+		client.DB.AddHeader("Authorization", "Bearer"+jwtToken);
 		c.Next()
 	}
 
@@ -56,7 +55,6 @@ func main() {
 	private := router.Group("/private", jwtTokenCheck);
 	
 	//Initialize a single supabase client instead of one for each query received
-	client := supabase.CreateClient(supabaseURL, supabaseKey)
 
 	// Route for user sign-up
 	router.POST("/signup", func(c *gin.Context) {
@@ -132,7 +130,7 @@ func main() {
 		}
 
 		var results []Usuario
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
+
 		err := client.DB.From("usuarios").Insert(usuario).Execute(&results)
 
 			if err != nil {
@@ -143,60 +141,73 @@ func main() {
 			c.JSON(http.StatusCreated, results)
 	})
 
-	router.POST("/tatuadores", func(c *gin.Context) {
-		client := supabase.CreateClient(supabaseURL, supabaseKey)
-		// Crie uma variável para armazenar os dados do usuário a partir do corpo da solicitação
+	router.GET("/tatuadores/:tatuador_id", func(c *gin.Context) {
+		tatuador_id := c.Param("tatuador_id")
+		var tatuador Tatuador
+		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", tatuador_id).Execute(&tatuador)
 
-		var data map[string]map[string]interface{}
-		
-		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'usuario'
-		if err := c.BindJSON(&data); err != nil {
+		fmt.Println(tatuador) // Selected rows
+
+		if err != nil {
+			c.JSON(http.StatusNoContent, gin.H{"caiu": err.Error()})
+			return
+		}
+	
+		c.JSON(http.StatusOK, tatuador)
+	})
+
+	router.GET("/tatuadores", func(c *gin.Context) {
+		var listaTatuadores []Tatuador
+		err := client.DB.From("tatuadores").Select("*").Execute(&listaTatuadores)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(listaTatuadores)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	
+		c.JSON(http.StatusOK, listaTatuadores)
+	})
+
+	private.POST("/tatuadores", func(c *gin.Context) {
+		var tatuador Tatuador
+
+		if err := c.BindJSON(&tatuador); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
 			return
 		}
+		
+		var results []Tatuador
 
-		usuarioData := data["usuario"]
-		tatuadorData := data["tatuador"] 
-		
-		fmt.Println("AQUI", usuarioData)
-		fmt.Println("AQUI", tatuadorData)
-		
-		var usuario Usuario
+		err := client.DB.From("tatuadores").Insert(tatuador).Execute(&results)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ruim": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, results)
+	})
+
+	private.PATCH("/tatuadores/:tatuador_id", func(c *gin.Context) {
+		tatuador_id := c.Param("tatuador_id")
 		var tatuador Tatuador
 
-		if usuarioData != nil {
-			// Use o pacote github.com/jinzhu/copier para copiar os valores do mapa para a struct
-			if err := copier.Copy(&usuario, usuarioData); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao copiar dados para a struct de usuario"})
-				return
-			}
+		if err := c.BindJSON(&tatuador); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
+			return
+		}
+		var results []Tatuador
+		err := client.DB.From("tatuadores").Update(tatuador).Eq("id", tatuador_id).Execute(&results)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ruim": err.Error()})
+			return
 		}
 
-		if tatuadorData != nil {
-			// Use o pacote github.com/jinzhu/copier para copiar os valores do mapa para a struct
-			if err := copier.Copy(&tatuador, tatuadorData); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao copiar dados para a struct de tatuador"})
-				return
-			}
-		}
-
-		var resul []Usuario
-
-		err := client.DB.From("usuarios").Insert(usuario).Execute(&resul)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"caca": err.Error()})
-				return
-			} else {
-				var results []Tatuador
-
-				err := client.DB.From("tatuadores").Insert(tatuador).Execute(&results)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"ruim": err.Error()})
-					return
-				}
-
-				c.JSON(http.StatusCreated, results)
-			}
+		c.JSON(http.StatusCreated, tatuador)
 	})
 
 	// Start the Gin server
@@ -216,7 +227,6 @@ type Usuario struct {
 }
 
 type Tatuador struct {
-	UsuarioUuid string `json:"usuario_uuid"`
 	EstudioId int `json:"estudio_id"`
 	Experiencia int `json:"experiencia"`
 	EstiloTatuagem string `json:"estilo_tatuagem"`
