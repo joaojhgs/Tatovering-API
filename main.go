@@ -327,6 +327,122 @@ func main() {
 		c.JSON(http.StatusOK, results)
 	})
 
+	// Estudios Logic
+
+	// Get estudio by ID
+	router.GET("/estudios/:id", func(c *gin.Context) {
+
+		var estudioId = c.Param("id")
+
+		var estudio interface{}
+
+		var err = client.DB.From("estudios").Select("*").Single().Eq("id", estudioId).Execute(&estudio)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, estudio)
+	})
+
+	// Get estudios
+	router.GET("/estudios", func(c *gin.Context) {
+
+		var estudios []interface{}
+
+		var err = client.DB.From("estudios").Select("*").Execute(&estudios)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, estudios)
+	})
+
+	// Create a estudio
+	router.POST("/estudios", func(c *gin.Context) {
+
+		// var requestBody = Estudio{}
+		var requestBody interface{}
+
+		err := c.ShouldBindJSON(&requestBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// var body = Estudio{
+		// 	ProprietarioId:       requestBody.ProprietarioId,
+		// 	Nome:                 requestBody.Nome,
+		// 	Email:                requestBody.Email,
+		// 	HorarioFuncionamento: requestBody.HorarioFuncionamento,
+		// 	Endereco:             requestBody.Endereco,
+		// 	Localizacao:          requestBody.Localizacao,
+		// 	Telefone:             requestBody.Telefone,
+		// 	Descricao:            requestBody.Descricao,
+		// 	TaxaAgendamento:      requestBody.TaxaAgendamento,
+		// }
+
+		var result interface{}
+		erro := client.DB.From("estudios").Insert(requestBody).Execute(&result)
+
+		if erro != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": erro.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
+	})
+
+	router.DELETE("estudios/:id", func(c *gin.Context) {
+		var estudioId = c.Param("id")
+
+		var result interface{}
+
+		var errSelect = client.DB.From("estudios").Select("*").Single().Eq("id", estudioId).Execute(&result)
+		if errSelect != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errSelect.Error()})
+			return
+		}
+
+		var deleteReturn interface{}
+		var err = client.DB.From("estudios").Delete().Eq("id", estudioId).Execute(&deleteReturn)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
+	})
+
+	router.PATCH("estudios/:id", func(c *gin.Context) {
+		var estudioId = c.Param("id")
+
+		var requestBody interface{}
+
+		errBody := c.ShouldBindJSON(&requestBody)
+		if errBody != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errBody.Error()})
+			return
+		}
+
+		var result []interface{}
+		var err = client.DB.From("estudios").Update(requestBody).Eq("id", estudioId).Execute(&result)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if len(result) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Estudio não encontrado"})
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
+	})
+
 	// Start the Gin server
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))
@@ -364,4 +480,16 @@ type Tatuagem struct {
 	Tamaho        int     `json:"tamanho"`
 	Cor           string  `json:"cor"`
 	Estilo        string  `json:"estilo"`
+}
+
+type Estudio struct {
+	ProprietarioId       int     `json:"proprietario_id"`
+	Nome                 string  `json:"nome"`
+	Email                string  `json:"email"`
+	HorarioFuncionamento string  `json:"horario_funcionamento"`
+	Endereco             string  `json:"endereco"`
+	Localizacao          string  `json:"localizacao"`
+	Telefone             string  `json:"telefone"`
+	Descricao            string  `json:"descricao"`
+	TaxaAgendamento      float32 `json:"taxa_agendamento"`
 }
