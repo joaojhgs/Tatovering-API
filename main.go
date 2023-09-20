@@ -8,12 +8,19 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"os"
 	supabase "github.com/nedpals/supabase-go"
 )
 
 func main() {
-	supabaseURL := "https://pfzlboeaonsookzcnniv.supabase.co"
-	supabaseKey := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmemxib2Vhb25zb29remNubml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTIwNjI3NTYsImV4cCI6MjAwNzYzODc1Nn0.KuEEX9EBIQmLTA02iPtqqNIewDmXITDxnIfD4qEqTN8"
+	if err := godotenv.Load(); err != nil {
+        fmt.Printf("Erro ao carregar arquivo .env: %v\n", err)
+        os.Exit(1)
+    }
+	// Initialize your Supabase client
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_KEY")
 
 	// Create a Gin router
 	router := gin.Default()
@@ -46,7 +53,9 @@ func main() {
 
 	// Create a group, all routes initialized with this group will pass through the
 	// jwtTokenCheck middleware function and be located like: /private/...
-	private := router.Group("/", jwtTokenCheck)
+	private := router.Group("/private", jwtTokenCheck);
+	
+	//Initialize a single supabase client instead of one for each query received
 
 	// Route for user sign-up
 	router.POST("/signup", func(c *gin.Context) {
@@ -100,6 +109,7 @@ func main() {
 		// Sign up the user with Supabase
 		user, err := client.Auth.SignIn(ctx, credentials)
 
+		fmt.Println(user)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
@@ -157,6 +167,74 @@ func main() {
 		c.JSON(http.StatusOK, user)
 	})
 
+	router.GET("/tatuadores/:tatuador_id", func(c *gin.Context) {
+		tatuador_id := c.Param("tatuador_id")
+		var tatuador Tatuador
+		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", tatuador_id).Execute(&tatuador)
+
+		fmt.Println(tatuador) // Selected rows
+
+		if err != nil {
+			c.JSON(http.StatusNoContent, gin.H{"caiu": err.Error()})
+			return
+		}
+	
+		c.JSON(http.StatusOK, tatuador)
+	})
+
+	router.GET("/tatuadores", func(c *gin.Context) {
+		var listaTatuadores []Tatuador
+		err := client.DB.From("tatuadores").Select("*").Execute(&listaTatuadores)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(listaTatuadores)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	
+		c.JSON(http.StatusOK, listaTatuadores)
+	})
+
+	private.POST("/tatuadores", func(c *gin.Context) {
+		var tatuador Tatuador
+
+		if err := c.BindJSON(&tatuador); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
+			return
+		}
+		
+		var results []Tatuador
+
+		err := client.DB.From("tatuadores").Insert(tatuador).Execute(&results)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ruim": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, results)
+	})
+
+	private.PATCH("/tatuadores/:tatuador_id", func(c *gin.Context) {
+		tatuador_id := c.Param("tatuador_id")
+		var tatuador Tatuador
+
+		if err := c.BindJSON(&tatuador); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
+			return
+		}
+		var results []Tatuador
+		err := client.DB.From("tatuadores").Update(tatuador).Eq("id", tatuador_id).Execute(&results)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ruim": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, tatuador)
+	})
 	/*********************************************************
 	* 				   	  CRUD TATUAGENS 				   	 *
 	**********************************************************/
@@ -255,12 +333,26 @@ func main() {
 
 // Define the Usuario struct to match your database structure
 type Usuario struct {
-	Nome             string `json:"nome"`
-	Telefone_celular string `json:"telefone_celular"`
-	Cpf              string `json:"cpf"`
-	Rg               string `json:"rg"`
-	Status           string `json:"status"`
-	Endereco         string `json:"endereco"`
+	Nome string `json:"nome"`
+	Email string `json:"email"`
+	TelefoneCelular string `json:"telefone_celular"`
+	Cpf string `json:"cpf"`
+	Rg string `json:"rg"`
+	Status string `json:"status"`
+	Endereco string `json:"endereco"`
+}
+
+type Tatuador struct {
+	EstudioId int `json:"estudio_id"`
+	Experiencia int `json:"experiencia"`
+	EstiloTatuagem string `json:"estilo_tatuagem"`
+	Status string `json:"status"`
+	Tipo string `json:"tipo"`
+	RedesSociais   *struct {
+		Instagram string `json:"instagram"`
+		X         string `json:"x"`
+		Facebook  string `json:"facebook"`
+	} `json:"redes_sociais"`
 }
 
 type Tatuagem struct {
