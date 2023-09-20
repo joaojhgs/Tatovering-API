@@ -5,19 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"os"
 	supabase "github.com/nedpals/supabase-go"
 )
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-        fmt.Printf("Erro ao carregar arquivo .env: %v\n", err)
-        os.Exit(1)
-    }
+		fmt.Printf("Erro ao carregar arquivo .env: %v\n", err)
+		os.Exit(1)
+	}
 	// Initialize your Supabase client
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_KEY")
@@ -53,8 +53,8 @@ func main() {
 
 	// Create a group, all routes initialized with this group will pass through the
 	// jwtTokenCheck middleware function and be located like: /private/...
-	private := router.Group("/private", jwtTokenCheck);
-	
+	private := router.Group("/", jwtTokenCheck)
+
 	//Initialize a single supabase client instead of one for each query received
 
 	// Route for user sign-up
@@ -178,7 +178,7 @@ func main() {
 			c.JSON(http.StatusNoContent, gin.H{"caiu": err.Error()})
 			return
 		}
-	
+
 		c.JSON(http.StatusOK, tatuador)
 	})
 
@@ -195,7 +195,7 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-	
+
 		c.JSON(http.StatusOK, listaTatuadores)
 	})
 
@@ -206,7 +206,7 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
 			return
 		}
-		
+
 		var results []Tatuador
 
 		err := client.DB.From("tatuadores").Insert(tatuador).Execute(&results)
@@ -333,21 +333,21 @@ func main() {
 
 // Define the Usuario struct to match your database structure
 type Usuario struct {
-	Nome string `json:"nome"`
-	Email string `json:"email"`
+	Nome            string `json:"nome"`
+	Email           string `json:"email"`
 	TelefoneCelular string `json:"telefone_celular"`
-	Cpf string `json:"cpf"`
-	Rg string `json:"rg"`
-	Status string `json:"status"`
-	Endereco string `json:"endereco"`
+	Cpf             string `json:"cpf"`
+	Rg              string `json:"rg"`
+	Status          string `json:"status"`
+	Endereco        string `json:"endereco"`
 }
 
 type Tatuador struct {
-	EstudioId int `json:"estudio_id"`
-	Experiencia int `json:"experiencia"`
+	EstudioId      int    `json:"estudio_id"`
+	Experiencia    int    `json:"experiencia"`
 	EstiloTatuagem string `json:"estilo_tatuagem"`
-	Status string `json:"status"`
-	Tipo string `json:"tipo"`
+	Status         string `json:"status"`
+	Tipo           string `json:"tipo"`
 	RedesSociais   *struct {
 		Instagram string `json:"instagram"`
 		X         string `json:"x"`
