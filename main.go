@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	supabase "github.com/nedpals/supabase-go"
@@ -24,7 +25,7 @@ func main() {
 
 	// Create a Gin router
 	router := gin.Default()
-
+	router.Use(cors.Default())
 	//Initialize a single supabase client instead of one for each query received
 	client := supabase.CreateClient(supabaseURL, supabaseKey)
 
