@@ -235,6 +235,96 @@ func main() {
 
 		c.JSON(http.StatusCreated, tatuador)
 	})
+	/*********************************************************
+	* 				   	  CRUD TATUAGENS 				   	 *
+	**********************************************************/
+	private.POST("/tatuagens", func(c *gin.Context) {
+
+		var requestBody Tatuagem
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var results []Tatuagem
+
+		// inserting data and receive error if exist
+		err := client.DB.From("tatuagens").Insert(requestBody).Execute(&results)
+
+		// chack error returned
+		if err != nil {
+			// ginh.H used to returnd a json file
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// return a json file
+		c.JSON(http.StatusOK, results)
+
+	})
+
+	private.PATCH("/tatuagens/:id", func(c *gin.Context) {
+		tatuagemId := c.Param("id")
+
+		var requestBody Tatuagem
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var results Tatuagem
+		err := client.DB.From("tatuagens").Select("*").Single().Eq("id", tatuagemId).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		updateErr := client.DB.From("tatuagens").Update(requestBody).Eq("id", tatuagemId)
+
+		if updateErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"errror": err.Error()})
+		}
+
+		c.JSON(http.StatusOK, results)
+	})
+
+	// Find all tattoo by tattoo artist
+	router.GET("/tatuagens/:id", func(c *gin.Context) {
+		// extract of param the tatuador id
+		tatuadorId := c.Param("id")
+
+		// variable of return function execute databse
+		var results []Tatuagem
+
+		err := client.DB.From("tatuagens").Select("*").Eq("tatuador_id", tatuadorId).Execute(&results)
+
+		// tratament error case exists
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// response
+		c.JSON(http.StatusOK, results)
+	})
+
+	// Delete tattoo per id tattoo artist
+	private.DELETE("/tatuagens/:id", func(c *gin.Context) {
+		tatuagemId := c.Param("id")
+
+		var results Tatuagem
+		err := client.DB.From("tatuagens").Delete().Eq("id", tatuagemId).Execute(&results)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, results)
+	})
 
 	// Start the Gin server
 	port := 8080 // Change to the desired port
@@ -263,4 +353,14 @@ type Tatuador struct {
 		X         string `json:"x"`
 		Facebook  string `json:"facebook"`
 	} `json:"redes_sociais"`
+}
+
+type Tatuagem struct {
+	TatuadorId    int     `json:"tatuador_id"`
+	AgendamentoId int     `json:"agendamento_id"`
+	Preco         float32 `json:"preco"`
+	Desenho       string  `json:"desenho"`
+	Tamaho        int     `json:"tamanho"`
+	Cor           string  `json:"cor"`
+	Estilo        string  `json:"estilo"`
 }
