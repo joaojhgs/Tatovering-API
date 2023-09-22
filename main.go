@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"context"
 	"errors"
 	"fmt"
@@ -35,7 +36,7 @@ func main() {
 		fmt.Printf("Erro ao carregar arquivo .env: %v\n", err)
 		os.Exit(1)
 	}
-	// Initialize your Supabase client
+
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_KEY")
 
@@ -136,7 +137,7 @@ func main() {
 	})
 
 	// Define CRUD routes for "usuarios"
-	private.POST("/usuarios", func(c *gin.Context) {
+	router.POST("/usuarios", func(c *gin.Context) {
 		// Create a new usuario
 		var row Usuario
 
@@ -156,33 +157,62 @@ func main() {
 		c.JSON(http.StatusCreated, results)
 	})
 
-	router.GET("/usuarios/:id", func(c *gin.Context) {
+	router.PATCH("/usuarios/:id", func(c *gin.Context) {
 		id := c.Param("id")
-		var user Usuario
-		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&user)
+		var existingUser Usuario
+		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&existingUser); 
+		
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, user)
-	})
-
-	private.PATCH("/usuarios/:id", func(c *gin.Context) {
-		id := c.Param("id")
+		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'user'
 		var user Usuario
 		if err := c.ShouldBindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		var results []Usuario
-		err := client.DB.From("usuarios").Update(user).Eq("id", id).Execute(&results)
 
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		// Usar reflexão para iterar sobre os campos da struct e atualizar os valores
+		existingUserReflect := reflect.ValueOf(&existingUser).Elem()
+		userReflect := reflect.ValueOf(&user).Elem()
+
+		for i := 0; i < existingUserReflect.NumField(); i++ {
+			fieldName := existingUserReflect.Type().Field(i).Name
+			existingFieldValue := existingUserReflect.Field(i)
+			userFieldValue := userReflect.FieldByName(fieldName)
+
+			// Verifique se o campo existe na solicitação e é diferente de zero
+			if userFieldValue.IsValid() && userFieldValue.Interface() != reflect.Zero(userFieldValue.Type()).Interface() {
+				existingFieldValue.Set(userFieldValue)
+			}
+		}
+
+		// Atualize o registro no banco de dados
+		var results []Usuario
+		errUpdate := client.DB.From("usuarios").Update(existingUser).Eq("id", id).Execute(&results)
+
+		if errUpdate != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, user)
+
+		c.JSON(http.StatusOK, existingUser)
 	})
+
+	router.DELETE("/usuarios/:id", func(c *gin.Context) {
+		id := c.Param("id")
+
+		var usuario Usuario
+		err := client.DB.From("usuarios").Delete().Eq("id", id).Execute(&usuario)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(usuario) // Empty - nothing returned from delete
+		c.JSON(http.StatusOK, usuario)
+	})
+	
 
 	router.GET("/tatuadores/:tatuador_id", func(c *gin.Context) {
 		tatuador_id := c.Param("tatuador_id")
@@ -235,23 +265,54 @@ func main() {
 		c.JSON(http.StatusCreated, results)
 	})
 
-	private.PATCH("/tatuadores/:tatuador_id", func(c *gin.Context) {
-		tatuador_id := c.Param("tatuador_id")
-		var tatuador Tatuador
+	router.PATCH("/tatuadores/:id", func(c *gin.Context) {
+		id := c.Param("id")
 
-		if err := c.BindJSON(&tatuador); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
-			return
-		}
-		var results []Tatuador
-		err := client.DB.From("tatuadores").Update(tatuador).Eq("id", tatuador_id).Execute(&results)
+		var tatuadorAtual Tatuador
+		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", id).Execute(&tatuadorAtual); 
+		
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"ruim": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"bla": err.Error()})
+			return
+		}
+		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'user'
+		var tatuadorUpdate Tatuador
+		errDadosUpdate := c.ShouldBindJSON(&tatuadorUpdate);
+		
+		if errDadosUpdate != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"blabla": errDadosUpdate.Error()})
 			return
 		}
 
-		c.JSON(http.StatusCreated, tatuador)
+		// Usar reflexão para iterar sobre os campos da struct e atualizar os valores
+		tatuadorAtualReflect := reflect.ValueOf(&tatuadorAtual).Elem()
+		tatuadorUpdateReflect := reflect.ValueOf(&tatuadorUpdate).Elem()
+
+		for i := 0; i < tatuadorAtualReflect.NumField(); i++ {
+			fieldName := tatuadorAtualReflect.Type().Field(i).Name
+			atualCampoValor := tatuadorAtualReflect.Field(i)
+			updateCampoValor := tatuadorUpdateReflect.FieldByName(fieldName)
+
+			// Verifique se o campo existe na solicitação e é diferente de zero
+			if updateCampoValor.IsValid() && updateCampoValor.Interface() != reflect.Zero(updateCampoValor.Type()).Interface() {
+				atualCampoValor.Set(updateCampoValor)
+			}
+		}
+
+		// Atualize o registro no banco de dados
+		var results []Tatuador
+	
+		errUpdate := client.DB.From("tatuadores").Update(tatuadorAtual).Eq("id", id).Execute(&results)
+
+		if errUpdate != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"blablabla": errUpdate.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, tatuadorAtual)
 	})
+
+
 	/*********************************************************
 	* 				   	  CRUD TATUAGENS 				   	 *
 	**********************************************************/
@@ -287,31 +348,51 @@ func main() {
 		c.JSON(http.StatusOK, results)
 	})
 
-	private.PATCH("/tatuagens/:id", func(c *gin.Context) {
-		tatuagemId := c.Param("id")
+	router.PATCH("/tatuagens/:id", func(c *gin.Context) {
+		id := c.Param("id")
 
-		var requestBody Tatuagem
-
-		if err := c.ShouldBindJSON(&requestBody); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var results Tatuagem
-		err := client.DB.From("tatuagens").Select("*").Single().Eq("id", tatuagemId).Execute(&results)
-
+		var tatuagemAtual Tatuagem
+		err := client.DB.From("tatuagens").Select("*").Single().Eq("id", id).Execute(&tatuagemAtual); 
+		
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"bla": err.Error()})
+			return
+		}
+		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'user'
+		var tatuagemUpdate Tatuagem
+		errDadosUpdate := c.ShouldBindJSON(&tatuagemUpdate);
+		
+		if errDadosUpdate != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"blabla": errDadosUpdate.Error()})
 			return
 		}
 
-		updateErr := client.DB.From("tatuagens").Update(requestBody).Eq("id", tatuagemId)
+		// Usar reflexão para iterar sobre os campos da struct e atualizar os valores
+		tatuagemAtualReflect := reflect.ValueOf(&tatuagemAtual).Elem()
+		tatuagemUpdateReflect := reflect.ValueOf(&tatuagemUpdate).Elem()
 
-		if updateErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"errror": err.Error()})
+		for i := 0; i < tatuagemAtualReflect.NumField(); i++ {
+			fieldName := tatuagemAtualReflect.Type().Field(i).Name
+			atualCampoValor := tatuagemAtualReflect.Field(i)
+			updateCampoValor := tatuagemUpdateReflect.FieldByName(fieldName)
+
+			// Verifique se o campo existe na solicitação e é diferente de zero
+			if updateCampoValor.IsValid() && updateCampoValor.Interface() != reflect.Zero(updateCampoValor.Type()).Interface() {
+				atualCampoValor.Set(updateCampoValor)
+			}
 		}
 
-		c.JSON(http.StatusOK, results)
+		// Atualize o registro no banco de dados
+		var results []Tatuagem
+	
+		errUpdate := client.DB.From("tatuagens").Update(tatuagemAtual).Eq("id", id).Execute(&results)
+
+		if errUpdate != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"blablabla": errUpdate.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, tatuagemAtual)
 	})
 
 	router.GET("/tatuagens/:id", func(c *gin.Context) {
@@ -387,18 +468,6 @@ func main() {
 			return
 		}
 
-		// var body = Estudio{
-		// 	ProprietarioId:       requestBody.ProprietarioId,
-		// 	Nome:                 requestBody.Nome,
-		// 	Email:                requestBody.Email,
-		// 	HorarioFuncionamento: requestBody.HorarioFuncionamento,
-		// 	Endereco:             requestBody.Endereco,
-		// 	Localizacao:          requestBody.Localizacao,
-		// 	Telefone:             requestBody.Telefone,
-		// 	Descricao:            requestBody.Descricao,
-		// 	TaxaAgendamento:      requestBody.TaxaAgendamento,
-		// }
-
 		var result interface{}
 		erro := client.DB.From("estudios").Insert(requestBody).Execute(&result)
 
@@ -465,7 +534,6 @@ func main() {
 // Define the Usuario struct to match your database structure
 type Usuario struct {
 	Nome            string `json:"nome"`
-	Email           string `json:"email"`
 	TelefoneCelular string `json:"telefone_celular"`
 	Cpf             string `json:"cpf"`
 	Rg              string `json:"rg"`
@@ -489,7 +557,7 @@ type Tatuador struct {
 type Tatuagem struct {
 	TatuadorId    int     `json:"tatuador_id"`
 	AgendamentoId int     `json:"agendamento_id"`
-	Preco         float32 `json:"preco"`
+	Preco         float64 `json:"preco"`
 	Desenho       string  `json:"desenho"`
 	Tamaho        int     `json:"tamanho"`
 	Cor           string  `json:"cor"`
