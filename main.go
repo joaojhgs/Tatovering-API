@@ -213,8 +213,8 @@ func main() {
 		c.JSON(http.StatusOK, usuario)
 	})
 	
-
-	router.GET("/tatuadores/:tatuador_id", func(c *gin.Context) {
+	// Get by id tatuadores
+	private.GET("/tatuadores/:tatuador_id", func(c *gin.Context) {
 		tatuador_id := c.Param("tatuador_id")
 		var tatuador Tatuador
 		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", tatuador_id).Execute(&tatuador)
@@ -229,24 +229,64 @@ func main() {
 		c.JSON(http.StatusOK, tatuador)
 	})
 
+	// Listagem de tatuadores
 	router.GET("/tatuadores", func(c *gin.Context) {
+		// Consulta para buscar todos os tatuadores
 		var listaTatuadores []Tatuador
 		err := client.DB.From("tatuadores").Select("*").Execute(&listaTatuadores)
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(listaTatuadores)
-
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+	
+		// Extrair os user_uuids da lista de tatuadores
+		var userUUIDs []string
+		for _, tatuador := range listaTatuadores {
+			userUUIDs = append(userUUIDs, tatuador.UserUuid)
+		}
+	
+		// Consulta para buscar os nomes dos tatuadores com base em user_uuid
+		var nomesTatuadores []struct {
+			UserUuid string
+			Nome     string
+		}
+	
+		errNomes := client.DB.From("usuarios").Select("id, nome").In("id", userUUIDs).Execute(&nomesTatuadores)
+		if errNomes != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errNomes.Error()})
+			return
+		}
+		fmt.Println(2, nomesTatuadores)
+		// Criar um mapa para mapear user_uuids para nomes
+		nomeTatuadorMap := make(map[string]string)
+		for _, nomeTatuador := range nomesTatuadores {
+			nomeTatuadorMap[nomeTatuador.UserUuid] = nomeTatuador.Nome
+		}
+	
+		// Combinar informações de Tatuador com nomes dos tatuadores
+		var listaTatuadoresComNomes []struct {
+			Tatuador
+			NomeTatuador string
+		}
+		fmt.Println(666, nomeTatuadorMap)
+		for _, tatuador := range listaTatuadores {
+			fmt.Println(1, tatuador)
+			fmt.Println(00, nomeTatuadorMap[tatuador.UserUuid])
+			nomeTatuador := nomeTatuadorMap[tatuador.UserUuid]
+			listaTatuadoresComNomes = append(listaTatuadoresComNomes, struct {
+				Tatuador
+				NomeTatuador string
+			}{
+				Tatuador:     tatuador,
+				NomeTatuador: nomeTatuador,
+			})
+		}
+	
+		c.JSON(http.StatusOK, listaTatuadoresComNomes)
+	})	
 
-		c.JSON(http.StatusOK, listaTatuadores)
-	})
-
-	private.POST("/tatuadores", func(c *gin.Context) {
+	// Cadastro tatuadores
+	router.POST("/tatuadores", func(c *gin.Context) {
 		var tatuador Tatuador
 
 		if err := c.BindJSON(&tatuador); err != nil {
@@ -265,6 +305,7 @@ func main() {
 		c.JSON(http.StatusCreated, results)
 	})
 
+	// Edição tatuadores
 	router.PATCH("/tatuadores/:id", func(c *gin.Context) {
 		id := c.Param("id")
 
@@ -329,7 +370,7 @@ func main() {
 
 	})
 
-	private.POST("/tatuagens", func(c *gin.Context) {
+	router.POST("/tatuagens", func(c *gin.Context) {
 		var requestBody Tatuagem
 
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
@@ -338,6 +379,7 @@ func main() {
 		}
 
 		var results []Tatuagem
+		fmt.Println(requestBody)
 		err := client.DB.From("tatuagens").Insert(requestBody).Execute(&results)
 
 		if err != nil {
@@ -400,7 +442,7 @@ func main() {
 
 		var results []Tatuagem
 
-		err := client.DB.From("tatuagens").Select("*").Eq("tatuador_id", tatuadorId).Execute(&results)
+		err := client.DB.From("tatuagens").Select("*").Eq("id", tatuadorId).Execute(&results)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -410,7 +452,7 @@ func main() {
 		c.JSON(http.StatusOK, results)
 	})
 
-	private.DELETE("/tatuagens/:id", func(c *gin.Context) {
+	router.DELETE("/tatuagens/:id", func(c *gin.Context) {
 		tatuagemId := c.Param("id")
 
 		var results Tatuagem
@@ -500,30 +542,52 @@ func main() {
 		c.JSON(http.StatusOK, result)
 	})
 
-	router.PATCH("estudios/:id", func(c *gin.Context) {
-		var estudioId = c.Param("id")
+	router.PATCH("/estudios/:id", func(c *gin.Context) {
+		id := c.Param("id")
 
-		var requestBody interface{}
-
-		errBody := c.ShouldBindJSON(&requestBody)
-		if errBody != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errBody.Error()})
-			return
-		}
-
-		var result []interface{}
-		var err = client.DB.From("estudios").Update(requestBody).Eq("id", estudioId).Execute(&result)
+		var estudioAtual Estudio
+		err := client.DB.From("estudios").Select("*").Single().Eq("id", id).Execute(&estudioAtual); 
+		fmt.Println(3, estudioAtual)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"bla": err.Error()})
+			return
+		}
+		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'user'
+		var estudioUpdate Estudio
+		errDadosUpdate := c.ShouldBindJSON(&estudioUpdate);
+		
+		if errDadosUpdate != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"blabla": errDadosUpdate.Error()})
 			return
 		}
 
-		if len(result) == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Estudio não encontrado"})
+		// Usar reflexão para iterar sobre os campos da struct e atualizar os valores
+		estudioAtualReflect := reflect.ValueOf(&estudioAtual).Elem()
+		estudioUpdateReflect := reflect.ValueOf(&estudioUpdate).Elem()
+
+		for i := 0; i < estudioAtualReflect.NumField(); i++ {
+			fieldName := estudioAtualReflect.Type().Field(i).Name
+			atualCampoValor := estudioAtualReflect.Field(i)
+			updateCampoValor := estudioUpdateReflect.FieldByName(fieldName)
+
+			// Verifique se o campo existe na solicitação e é diferente de zero
+			if updateCampoValor.IsValid() && updateCampoValor.Interface() != reflect.Zero(updateCampoValor.Type()).Interface() {
+				atualCampoValor.Set(updateCampoValor)
+			}
+		}
+
+		// Atualize o registro no banco de dados
+		var results []Tatuador
+		fmt.Println(88, estudioAtual)
+		fmt.Println(99, estudioUpdate)
+		errUpdate := client.DB.From("estudios").Update(estudioAtual).Eq("id", id).Execute(&results)
+
+		if errUpdate != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"blablabla": errUpdate.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, estudioAtual)
 	})
 
 	// Start the Gin server
@@ -542,6 +606,7 @@ type Usuario struct {
 }
 
 type Tatuador struct {
+	UserUuid      string    `json:"user_uuid"`
 	EstudioId      int    `json:"estudio_id"`
 	Experiencia    int    `json:"experiencia"`
 	EstiloTatuagem string `json:"estilo_tatuagem"`
@@ -555,24 +620,22 @@ type Tatuador struct {
 }
 
 type Tatuagem struct {
-	TatuadorId    int     `json:"tatuador_id"`
-	AgendamentoId int     `json:"agendamento_id"`
-	Preco         float64 `json:"preco"`
-	Desenho       string  `json:"desenho"`
-	Tamaho        int     `json:"tamanho"`
-	Cor           string  `json:"cor"`
-	Estilo        string  `json:"estilo"`
+	Desenho         string   `json:"desenho"`
+	Preco           float64  `json:"preco"`
+	Tamanho          int     `json:"tamanho"`
+	Cor             string   `json:"cor"`
+	Estilo          string   `json:"estilo"`
 }
 
 type Estudio struct {
-	ProprietarioId       int     `json:"proprietario_id"`
+	ProprietarioId       string  `json:"proprietario_uuid"`
 	Nome                 string  `json:"nome"`
 	Email                string  `json:"email"`
 	HorarioDeFuncionamento *struct {
-    Segunda []string `json:"segunda"`
-    Terca   []string `json:"terca"`
-    Quarta  []string `json:"quarta"`
-    Quinta  []string `json:"quinta"`
-    Sexta   []string `json:"sexta"`
-} `json:"horario_funcionamento"`
+		Segunda []string `json:"segunda"`
+		Terca   []string `json:"terca"`
+		Quarta  []string `json:"quarta"`
+		Quinta  []string `json:"quinta"`
+		Sexta   []string `json:"sexta"`
+	} `json:"horario_funcionamento"`
 }
