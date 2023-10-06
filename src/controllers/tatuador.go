@@ -10,13 +10,11 @@ import (
 
 func GetByIdTatuador(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tatuador_id := c.Param("tatuador_id")
+		id := c.Param("id")
 	
-		var tatuador models.Tatuador
+		var tatuador []models.Tatuador
 
-		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", tatuador_id).Execute(&tatuador)
-
-		fmt.Println(tatuador)
+		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", id).Execute(&tatuador)
 
 		if err != nil {
 			c.JSON(http.StatusNoContent, gin.H{"caiu": err.Error()})

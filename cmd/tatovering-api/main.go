@@ -32,7 +32,7 @@ func main() {
 	routes.SetupTatuagemRoutes(router, client)
 	routes.SetupEstudiosRoutes(router, client)
 
-	private := router.Group("/", middlewares.JwtTokenCheck(client))
+	private := router.Group("/private", middlewares.JwtTokenCheck(client))
 	fmt.Println(88, private)
 
 	port := 8080 // Change to the desired port

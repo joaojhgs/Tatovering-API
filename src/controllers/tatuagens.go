@@ -9,6 +9,8 @@ import (
 	"tatovering/src/models"
 )
 
+// Tatuagens Ok
+
 func CadastrarTatuagem(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var requestBody models.Tatuagem

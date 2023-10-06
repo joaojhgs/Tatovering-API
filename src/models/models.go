@@ -1,16 +1,30 @@
 package models
 
 type Estudio struct {
-	ProprietarioId       string  `json:"proprietario_uuid"`
-	Nome                 string  `json:"nome"`
-	Email                string  `json:"email"`
+	ProprietarioId       string `json:"proprietario_id"`
+	Nome                 string `json:"nome"`
+	Email                string `json:"email"`
+	Taxa_agendamento     float64 `json:"taxa_agendamento"`
+	Telefone             string `json:"telefone"`
+	Descricao             string `json:"descricao"`
 	HorarioDeFuncionamento *struct {
 		Segunda []string `json:"segunda"`
 		Terca   []string `json:"terca"`
 		Quarta  []string `json:"quarta"`
 		Quinta  []string `json:"quinta"`
 		Sexta   []string `json:"sexta"`
+		Sabado   []string `json:"sabado"`
+		Domingo   []string `json:"domingo"`
 	} `json:"horario_funcionamento"`
+	DiasFuncionamento    *struct {
+		Segunda bool `json:"segunda"`
+		Terca   bool `json:"terca"`
+		Quarta  bool `json:"quarta"`
+		Quinta  bool `json:"quinta"`
+		Sexta   bool `json:"sexta"`
+		Sabado   bool `json:"sabado"`
+		Domingo   bool `json:"domingo"`
+	} `json:"dias_funcionamento"`
 }
 
 type Usuario struct {
@@ -23,22 +37,25 @@ type Usuario struct {
 }
 
 type Tatuador struct {
-	Experiencia    int    `json:"experiencia"`
-	EstiloTatuagem string `json:"estilo_tatuagem"`
-	Status         string `json:"status"`
-	Tipo           string `json:"tipo"`
-	ImgemPerfil           string `json:"imagem_perfil"`
+	UsuarioId      string    `json:"usuario_id"`
+	Nome           string    `json:"nome"`
+	Experiencia    int       `json:"experiencia"`
+	EstiloTatuagem string    `json:"estilo_tatuagem"`
+	Status         string    `json:"status"`
+	Tipo           string    `json:"tipo"`
+	ImgemPerfil    string    `json:"imagem_perfil"`
+	EstudioId      string    `json:"estudio_id"`
 	RedesSociais   *struct {
-		Instagram string `json:"instagram"`
-		X         string `json:"x"`
-		Facebook  string `json:"facebook"`
+		Instagram  string    `json:"instagram"`
+		X          string    `json:"x"`
+		Facebook   string    `json:"facebook"`
 	} `json:"redes_sociais"`
 }
 
 type Tatuagem struct {
-	Desenho         string   `json:"desenho"`
+	Imagem          string   `json:"imagem"`
 	Preco           float64  `json:"preco"`
-	Tamanho          int     `json:"tamanho"`
+	Tamanho         int      `json:"tamanho"`
 	Cor             string   `json:"cor"`
 	Estilo          string   `json:"estilo"`
 }

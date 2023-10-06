@@ -1,10 +1,10 @@
 
 CREATE TABLE agendamentos
 (
-  id                int      NOT NULL GENERATED ALWAYS AS IDENTITY UNIQUE,
-  servico_id        int      NOT NULL,
-  cliente_id        INT      NOT NULL,
-  tatuador_id       int      NOT NULL,
+  id                string      NOT NULL GENERATED ALWAYS AS IDENTITY UNIQUE,
+  servico_id        string      NOT NULL,
+  cliente_id        string      NOT NULL,
+  tatuador_id       string      NOT NULL,
   duracao           int      NOT NULL,
   valor             float    NOT NULL,
   status            enum    ,
