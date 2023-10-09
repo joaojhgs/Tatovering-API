@@ -7,7 +7,6 @@ import (
 	"github.com/joho/godotenv"
 	supabase "github.com/nedpals/supabase-go"
 	"tatovering/src/routes"
-	"tatovering/src/middlewares"
 	"tatovering/configs"
 )
 
@@ -31,9 +30,6 @@ func main() {
 	routes.SetupTatuadoresRoutes(router, client)
 	routes.SetupTatuagemRoutes(router, client)
 	routes.SetupEstudiosRoutes(router, client)
-
-	private := router.Group("/private", middlewares.JwtTokenCheck(client))
-	fmt.Println(88, private)
 
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))

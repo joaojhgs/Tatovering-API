@@ -5,14 +5,27 @@ import (
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
     "tatovering/src/controllers"
+    "tatovering/src/middlewares"
 )
 
 func SetupUsuariosRoutes(router *gin.Engine, client *supabase.Client) {
     usuarioGroup := router.Group("/usuarios")
     {
-        usuarioGroup.POST("/", controllers.CadastrarUsuario(client))
-        usuarioGroup.PATCH("/:id", controllers.EditarUsuario(client))
-        usuarioGroup.DELETE("/:id", controllers.DeletarUsuario(client))
+        usuarioGroup.POST(
+			"/",
+			middlewares.JwtTokenCheck(client),
+			controllers.CadastrarUsuario(client),
+		)
+        usuarioGroup.PATCH(
+			"/:id",
+			middlewares.JwtTokenCheck(client),
+			controllers.EditarUsuario(client),
+		)
+        usuarioGroup.DELETE(
+			"/:id",
+			middlewares.JwtTokenCheck(client),
+			controllers.DeletarUsuario(client),
+		)
 
         router.POST("/signup", SignUp(client))
         router.POST("/signin", SignIn(client))

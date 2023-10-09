@@ -116,3 +116,34 @@ func EdicaoTatuador(client *supabase.Client) gin.HandlerFunc {
 		c.JSON(http.StatusOK, tatuadorAtual)
 	}
 }
+
+func TatuadoresEstudio(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		estudioId := c.Param("estudio_id")
+
+		var tatuadores []models.Tatuador
+
+		errSelectTatuadores := client.DB.From("tatuadores").Select("*").Eq("estudio_id", estudioId).Execute(&tatuadores)
+
+		if errSelectTatuadores != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"bla": errSelectTatuadores.Error()})
+			return
+		}
+
+		var estudio []models.Estudio
+
+		errSelectEstudios := client.DB.From("estudios").Select("*").Eq("id", estudioId).Execute(&estudio)
+
+		if errSelectEstudios != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"blabla": errSelectEstudios.Error()})
+			return
+		}
+
+		dadosRetorno := gin.H{
+			"tatuadores": tatuadores,
+			"estudio": estudio,
+		}
+
+		c.JSON(http.StatusOK, dadosRetorno)
+	}
+}

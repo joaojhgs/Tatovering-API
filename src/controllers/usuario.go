@@ -19,7 +19,6 @@ func CadastrarUsuario(client *supabase.Client) gin.HandlerFunc {
 		}
 
 		var results []models.Usuario
-		fmt.Println(usuario.Nome)
 		errInsert := client.DB.From("usuarios").Insert(usuario).Execute(&results)
 
 		if errInsert != nil {

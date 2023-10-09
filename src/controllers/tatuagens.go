@@ -35,11 +35,11 @@ func CadastrarTatuagem(client *supabase.Client) gin.HandlerFunc {
 
 func GetByIdTatuagem(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tatuadorId := c.Param("id")
+		tatuagemId := c.Param("id")
 
 		var results []models.Tatuagem
 
-		err := client.DB.From("tatuagens").Select("*").Eq("id", tatuadorId).Execute(&results)
+		err := client.DB.From("tatuagens").Select("*").Eq("id", tatuagemId).Execute(&results)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -126,5 +126,37 @@ func EditarTatuagem(client *supabase.Client) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, tatuagemAtual)
+	}
+}
+
+func GetArtByTatuadorId(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tatuadorId := c.Param("tatuador_id")
+
+		var tatuagens []models.Tatuagem
+
+		errSelectTatuagen := client.DB.From("tatuagens").Select("*").Eq("tatuador_id", tatuadorId).Execute(&tatuagens)
+
+		if errSelectTatuagen != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"bla": errSelectTatuagen.Error()})
+			return
+		}
+
+		var tatuador []models.Tatuador
+
+		errSelectTatuador := client.DB.From("tatuadores").Select("*").Eq("id", tatuadorId).Execute(&tatuador)
+
+		if errSelectTatuador != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"blabla": errSelectTatuador.Error()})
+			return
+		}
+
+		dadosRetorno := gin.H{
+			"tatuador":  tatuador,
+			"tatuagens": tatuagens,
+		}
+
+		c.JSON(http.StatusOK, dadosRetorno)
+
 	}
 }

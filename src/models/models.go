@@ -1,7 +1,6 @@
 package models
 
 type Estudio struct {
-	ProprietarioId       string `json:"proprietario_id"`
 	Nome                 string `json:"nome"`
 	Email                string `json:"email"`
 	Taxa_agendamento     float64 `json:"taxa_agendamento"`
@@ -37,14 +36,12 @@ type Usuario struct {
 }
 
 type Tatuador struct {
-	UsuarioId      string    `json:"usuario_id"`
 	Nome           string    `json:"nome"`
 	Experiencia    int       `json:"experiencia"`
 	EstiloTatuagem string    `json:"estilo_tatuagem"`
 	Status         string    `json:"status"`
 	Tipo           string    `json:"tipo"`
 	ImgemPerfil    string    `json:"imagem_perfil"`
-	EstudioId      string    `json:"estudio_id"`
 	RedesSociais   *struct {
 		Instagram  string    `json:"instagram"`
 		X          string    `json:"x"`

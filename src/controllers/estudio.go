@@ -135,4 +135,3 @@ func DeletarEstudio(client *supabase.Client) gin.HandlerFunc {
 		c.JSON(http.StatusOK, listaEstudio)
 	}
 }
-
