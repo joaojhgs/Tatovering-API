@@ -4,6 +4,7 @@ type Estudio struct {
 	Nome                 string `json:"nome"`
 	Email                string `json:"email"`
 	Taxa_agendamento     float64 `json:"taxa_agendamento"`
+	Localizacao 		 []float64 `json:"localizacao"`
 	Telefone             string `json:"telefone"`
 	Descricao             string `json:"descricao"`
 	HorarioDeFuncionamento *struct {
@@ -38,7 +39,7 @@ type Usuario struct {
 type Tatuador struct {
 	Nome           string    `json:"nome"`
 	Experiencia    int       `json:"experiencia"`
-	EstiloTatuagem string    `json:"estilo_tatuagem"`
+	EstiloTatuagem []string    `json:"estilo_tatuagem"`
 	Status         string    `json:"status"`
 	Tipo           string    `json:"tipo"`
 	ImgemPerfil    string    `json:"imagem_perfil"`
