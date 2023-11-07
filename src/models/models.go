@@ -56,4 +56,5 @@ type Tatuagem struct {
 	Tamanho         int      `json:"tamanho"`
 	Cor             string   `json:"cor"`
 	Estilo          string   `json:"estilo"`
+	TatuadorId      string   `json:"tatuador_id"`
 }
