@@ -9,6 +9,23 @@ import (
 	"tatovering/src/models"
 )
 
+func GetById(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		var existingUser []models.Usuario
+
+		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&existingUser);
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, existingUser)
+	}
+}
+
 func CadastrarUsuario(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var usuario models.Usuario

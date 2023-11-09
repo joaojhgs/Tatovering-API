@@ -16,6 +16,10 @@ func SetupUsuariosRoutes(router *gin.Engine, client *supabase.Client) {
 			middlewares.JwtTokenCheck(client),
 			controllers.CadastrarUsuario(client),
 		)
+		usuarioGroup.GET(
+			"/:id",
+			controllers.GetById(client),
+		)
         usuarioGroup.PATCH(
 			"/:id",
 			middlewares.JwtTokenCheck(client),
