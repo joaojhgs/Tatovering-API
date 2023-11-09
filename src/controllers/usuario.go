@@ -11,11 +11,11 @@ import (
 
 func GetById(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		usuarioId := c.Param("id")
 
 		var existingUser []models.Usuario
 
-		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&existingUser);
+		err := client.DB.From("usuarios").Select("*").Eq("id", usuarioId).Execute(&existingUser);
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
