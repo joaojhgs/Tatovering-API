@@ -1,6 +1,7 @@
 package models
 
 type Estudio struct {
+	Id                   string  `json:"id"`
 	Nome                   string  `json:"nome"`
 	Email                  string  `json:"email"`
 	TaxaAgendamento        float64 `json:"taxa_agendamento"`
@@ -40,6 +41,7 @@ type Usuario struct {
 }
 
 type Tatuador struct {
+	Id                   string  `json:"id"`
 	Nome           string   `json:"nome"`
 	Experiencia    int      `json:"experiencia"`
 	EstiloTatuagem []string `json:"estilo_tatuagem"`
