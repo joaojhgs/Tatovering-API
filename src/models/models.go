@@ -3,11 +3,13 @@ package models
 type Estudio struct {
 	Nome                   string  `json:"nome"`
 	Email                  string  `json:"email"`
-	Taxa_agendamento       float64 `json:"taxa_agendamento"`
+	TaxaAgendamento        float64 `json:"taxa_agendamento"`
 	Localizacao            string  `json:"localizacao"`
 	Telefone               string  `json:"telefone"`
 	Descricao              string  `json:"descricao"`
 	Endereco               string  `json:"endereco"`
+	ImagemPerfil           string  `json:"imagem_perfil"`
+	ImagemCapa             string  `json:"imagem_capa"`
 	HorarioDeFuncionamento *struct {
 		Segunda []string `json:"segunda"`
 		Terca   []string `json:"terca"`
@@ -44,6 +46,7 @@ type Tatuador struct {
 	Status         string   `json:"status"`
 	Tipo           string   `json:"tipo"`
 	ImgemPerfil    string   `json:"imagem_perfil"`
+	ImgemCapa      string   `json:"imagem_capa"`
 	RedesSociais   *struct {
 		Instagram string `json:"instagram"`
 		X         string `json:"x"`
