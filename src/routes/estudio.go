@@ -14,7 +14,7 @@ func SetupEstudiosRoutes(router *gin.Engine, client *supabase.Client) {
 		estudioGroup.GET("", controllers.ListagemEstudio(client))
 		estudioGroup.GET(":id", controllers.GetByIdEstudio(client))
 		estudioGroup.POST(
-			"/",
+			"",
 			middlewares.JwtTokenCheck(client),
 			controllers.CadastrarEstudio(client),
 		)

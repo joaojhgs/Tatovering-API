@@ -1,18 +1,20 @@
 package routes
+
 import (
 	"context"
 	"net/http"
+	"tatovering/src/controllers"
+	"tatovering/src/middlewares"
+
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
-    "tatovering/src/controllers"
-    "tatovering/src/middlewares"
 )
 
 func SetupUsuariosRoutes(router *gin.Engine, client *supabase.Client) {
-    usuarioGroup := router.Group("/usuarios")
-    {
-        usuarioGroup.POST(
-			"/",
+	usuarioGroup := router.Group("/usuarios")
+	{
+		usuarioGroup.POST(
+			"",
 			middlewares.JwtTokenCheck(client),
 			controllers.CadastrarUsuario(client),
 		)
@@ -20,21 +22,21 @@ func SetupUsuariosRoutes(router *gin.Engine, client *supabase.Client) {
 			"/:id",
 			controllers.GetById(client),
 		)
-        usuarioGroup.PATCH(
+		usuarioGroup.PATCH(
 			"/:id",
 			middlewares.JwtTokenCheck(client),
 			controllers.EditarUsuario(client),
 		)
-        usuarioGroup.DELETE(
+		usuarioGroup.DELETE(
 			"/:id",
 			middlewares.JwtTokenCheck(client),
 			controllers.DeletarUsuario(client),
 		)
 
-        router.POST("/signup", SignUp(client))
-        router.POST("/signin", SignIn(client))
+		router.POST("/signup", SignUp(client))
+		router.POST("/signin", SignIn(client))
 
-    }
+	}
 }
 
 func SignUp(client *supabase.Client) gin.HandlerFunc {
@@ -49,7 +51,7 @@ func SignUp(client *supabase.Client) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-	
+
 		// Create user credentials
 		credentials := supabase.UserCredentials{
 			Email:    requestBody.Email,
@@ -58,12 +60,12 @@ func SignUp(client *supabase.Client) gin.HandlerFunc {
 		ctx := context.Background()
 		// Sign up the user with Supabase
 		user, err := client.Auth.SignUp(ctx, credentials)
-	
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-	
+
 		c.JSON(http.StatusCreated, gin.H{"user": user})
 	}
 }
