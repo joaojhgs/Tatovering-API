@@ -73,11 +73,7 @@ type Usuario struct {
 }
 
 type Tatuador struct {
-<<<<<<< HEAD
 	Id             string   `json:"id"`
-=======
-	Id             string  `json:"id"`
->>>>>>> 4e1b219e4479105040530c53823d72fbc8d42e5d
 	Nome           string   `json:"nome"`
 	Experiencia    int      `json:"experiencia"`
 	EstiloTatuagem []string `json:"estilo_tatuagem"`
