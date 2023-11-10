@@ -42,7 +42,7 @@ type Usuario struct {
 }
 
 type Tatuador struct {
-	Id                   string  `json:"id"`
+	Id             string  `json:"id"`
 	Nome           string   `json:"nome"`
 	Experiencia    int      `json:"experiencia"`
 	EstiloTatuagem []string `json:"estilo_tatuagem"`
