@@ -11,6 +11,7 @@ type Estudio struct {
 	Endereco               string  `json:"endereco"`
 	ImagemPerfil           string  `json:"imagem_perfil"`
 	ImagemCapa             string  `json:"imagem_capa"`
+	ProprietarioId         string  `json:"proprietario_id"`
 	HorarioDeFuncionamento *struct {
 		Segunda []string `json:"segunda"`
 		Terca   []string `json:"terca"`
