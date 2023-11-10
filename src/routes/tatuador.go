@@ -24,7 +24,7 @@ func SetupTatuadoresRoutes(router *gin.Engine, client *supabase.Client) {
 			controllers.TatuadoresEstudio(client),
 		)
 		tatuadoreGroup.POST(
-			"/",
+			"",
 			middlewares.JwtTokenCheck(client),
 			controllers.CadastroTatuador(client),
 		)

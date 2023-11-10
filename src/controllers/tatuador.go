@@ -1,17 +1,19 @@
 package controllers
+
 import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"tatovering/src/models"
+
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
-	"tatovering/src/models"
 )
 
 func GetByIdTatuador(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-	
+
 		var tatuador []models.Tatuador
 
 		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", id).Execute(&tatuador)
@@ -30,7 +32,7 @@ func ListagemTatuador(client *supabase.Client) gin.HandlerFunc {
 		var listaTatuadores []models.Tatuador
 
 		err := client.DB.From("tatuadores").Select("*").Execute(&listaTatuadores)
-		
+
 		if err != nil {
 			panic(err)
 		}
@@ -49,14 +51,14 @@ func ListagemTatuador(client *supabase.Client) gin.HandlerFunc {
 func CadastroTatuador(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var tatuador models.Tatuador
+		var tatuador models.TatuadorPost
 
 		if err := c.BindJSON(&tatuador); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao decodificar JSON"})
 			return
 		}
 
-		var results []models.Tatuador
+		var results []models.TatuadorPost
 
 		err := client.DB.From("tatuadores").Insert(tatuador).Execute(&results)
 		if err != nil {
@@ -73,16 +75,16 @@ func EdicaoTatuador(client *supabase.Client) gin.HandlerFunc {
 		id := c.Param("id")
 
 		var tatuadorAtual models.Tatuador
-		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", id).Execute(&tatuadorAtual); 
-		
+		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", id).Execute(&tatuadorAtual)
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"bla": err.Error()})
 			return
 		}
 		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'user'
 		var tatuadorUpdate models.Tatuador
-		errDadosUpdate := c.ShouldBindJSON(&tatuadorUpdate);
-		
+		errDadosUpdate := c.ShouldBindJSON(&tatuadorUpdate)
+
 		if errDadosUpdate != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"blabla": errDadosUpdate.Error()})
 			return
@@ -141,7 +143,7 @@ func TatuadoresEstudio(client *supabase.Client) gin.HandlerFunc {
 
 		dadosRetorno := gin.H{
 			"tatuadores": tatuadores,
-			"estudio": estudio,
+			"estudio":    estudio,
 		}
 
 		c.JSON(http.StatusOK, dadosRetorno)

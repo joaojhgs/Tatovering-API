@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"tatovering/src/models"
+
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
-	"tatovering/src/models"
 )
 
 func ListagemEstudio(client *supabase.Client) gin.HandlerFunc {
@@ -18,8 +19,8 @@ func ListagemEstudio(client *supabase.Client) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
-			}
-	
+		}
+
 		c.JSON(http.StatusOK, listaEstudios)
 	}
 }
@@ -43,9 +44,10 @@ func GetByIdEstudio(client *supabase.Client) gin.HandlerFunc {
 
 func CadastrarEstudio(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var novoEstudio models.Estudio
+		var novoEstudio models.EstudioPost
 
 		err := c.ShouldBindJSON(&novoEstudio)
+		fmt.Println(novoEstudio)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -68,7 +70,7 @@ func EditarEstudio(client *supabase.Client) gin.HandlerFunc {
 		id := c.Param("id")
 
 		var estudioAtual models.Estudio
-		err := client.DB.From("estudios").Select("*").Single().Eq("id", id).Execute(&estudioAtual); 
+		err := client.DB.From("estudios").Select("*").Single().Eq("id", id).Execute(&estudioAtual)
 		fmt.Println(3, estudioAtual)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"bla": err.Error()})
@@ -76,8 +78,8 @@ func EditarEstudio(client *supabase.Client) gin.HandlerFunc {
 		}
 		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'user'
 		var estudioUpdate models.Estudio
-		errDadosUpdate := c.ShouldBindJSON(&estudioUpdate);
-		
+		errDadosUpdate := c.ShouldBindJSON(&estudioUpdate)
+
 		if errDadosUpdate != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"blabla": errDadosUpdate.Error()})
 			return
