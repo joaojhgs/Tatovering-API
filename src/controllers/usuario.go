@@ -1,21 +1,22 @@
 package controllers
 
 import (
-	"reflect"
 	"fmt"
 	"net/http"
+	"reflect"
+	"tatovering/src/models"
+
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
-	"tatovering/src/models"
 )
 
 func GetById(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		usuarioId := c.Param("id")
 
-		var existingUser []models.Usuario
+		var existingUser []models.UsuarioView
 
-		err := client.DB.From("usuarios").Select("*").Eq("id", usuarioId).Execute(&existingUser);
+		err := client.DB.From("usuarios_view").Select("*").Eq("id", usuarioId).Execute(&existingUser)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -66,8 +67,8 @@ func EditarUsuario(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		var existingUser models.Usuario
-		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&existingUser); 
-		
+		err := client.DB.From("usuarios").Select("*").Single().Eq("id", id).Execute(&existingUser)
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

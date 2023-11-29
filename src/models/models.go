@@ -72,6 +72,17 @@ type Usuario struct {
 	Endereco        string `json:"endereco"`
 }
 
+type UsuarioView struct {
+	Id              string `json:"id"`
+	Nome            string `json:"nome"`
+	TelefoneCelular string `json:"telefone_celular"`
+	Cpf             string `json:"cpf"`
+	Rg              string `json:"rg"`
+	Status          string `json:"status"`
+	Endereco        string `json:"endereco"`
+	TatuadorId      string `json:"tatuador_id"`
+}
+
 type Tatuador struct {
 	Id             string   `json:"id"`
 	Nome           string   `json:"nome"`
