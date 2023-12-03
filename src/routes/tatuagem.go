@@ -40,6 +40,11 @@ func SetupTatuagemRoutes(router *gin.Engine, client *supabase.Client) {
 			controllers.EditarTatuagem(client),
 		)
 		tatuagemGroup.DELETE(
+			"favoritos",
+			middlewares.JwtTokenCheck(client),
+			controllers.DeleteFavorito(client),
+		)
+		tatuagemGroup.DELETE(
 			"/:id",
 			middlewares.JwtTokenCheck(client),
 			controllers.DeletarTatuagem(client),

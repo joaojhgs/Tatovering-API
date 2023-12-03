@@ -33,12 +33,34 @@ func FavoritarTatuagem(client *supabase.Client) gin.HandlerFunc {
 	}
 }
 
+func DeleteFavorito(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var request models.Favoritos
+		var excluirFavorito models.Favoritos
+
+		if err := c.ShouldBindJSON(&request); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		err1 := client.DB.From("tatuagens_favoritas").Delete().Eq("usuario_id", request.UsuarioId).Eq("tatuagem_id", request.TatuagemId).Execute(&excluirFavorito)
+
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err1.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, excluirFavorito)
+
+	}
+}
+
 func GetFavoritos(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var usuario = c.Param("id")
-		var favoritos []models.Favoritos
+		var favoritos []models.Tatuagem
 
-		err1 := client.DB.From("tatuagens_favoritas").Select("*").Eq("usuario_id", usuario).Execute(&favoritos)
+		err1 := client.DB.From("favoritos_view").Select("*").Eq("usuario_id", usuario).Execute(&favoritos)
 
 		if err1 != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err1.Error()})
