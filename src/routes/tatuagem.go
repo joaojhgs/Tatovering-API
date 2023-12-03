@@ -21,6 +21,14 @@ func SetupTatuagemRoutes(router *gin.Engine, client *supabase.Client) {
 		tatuagemGroup.GET("tatuador/:tatuador_id",
 			controllers.GetArtByTatuadorId(client),
 		)
+		tatuagemGroup.GET("favoritos/:id",
+			middlewares.JwtTokenCheck(client),
+			controllers.GetFavoritos(client),
+		)
+		tatuagemGroup.POST(
+			"favoritar",
+			controllers.FavoritarTatuagem(client),
+		)
 		tatuagemGroup.POST(
 			"/",
 			middlewares.JwtTokenCheck(client),

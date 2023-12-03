@@ -2,14 +2,52 @@ package controllers
 
 import (
 	"fmt"
-	"reflect"
 	"net/http"
+	"reflect"
+	"tatovering/src/models"
+
 	"github.com/gin-gonic/gin"
 	supabase "github.com/nedpals/supabase-go"
-	"tatovering/src/models"
 )
 
 // Tatuagens Ok
+
+func FavoritarTatuagem(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var requestBody models.Favoritos
+		var favorito []models.Favoritos
+
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		err := client.DB.From("tatuagens_favoritas").Insert(requestBody).Execute(&favorito)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, favorito)
+	}
+}
+
+func GetFavoritos(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var usuario = c.Param("id")
+		var favoritos []models.Favoritos
+
+		err1 := client.DB.From("tatuagens_favoritas").Select("*").Eq("usuario_id", usuario).Execute(&favoritos)
+
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err1.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, favoritos)
+	}
+}
 
 func CadastrarTatuagem(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -58,8 +96,8 @@ func ListagemTatuagem(client *supabase.Client) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
-			}
-	
+		}
+
 		c.JSON(http.StatusOK, listaTatuagens)
 	}
 }
@@ -85,16 +123,16 @@ func EditarTatuagem(client *supabase.Client) gin.HandlerFunc {
 		id := c.Param("id")
 
 		var tatuagemAtual models.Tatuagem
-		err := client.DB.From("tatuagens").Select("*").Single().Eq("id", id).Execute(&tatuagemAtual); 
-		
+		err := client.DB.From("tatuagens").Select("*").Single().Eq("id", id).Execute(&tatuagemAtual)
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"bla": err.Error()})
 			return
 		}
 		// BindJSON tentará analisar o corpo da solicitação JSON na variável 'user'
 		var tatuagemUpdate models.Tatuagem
-		errDadosUpdate := c.ShouldBindJSON(&tatuagemUpdate);
-		
+		errDadosUpdate := c.ShouldBindJSON(&tatuagemUpdate)
+
 		if errDadosUpdate != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"blabla": errDadosUpdate.Error()})
 			return
@@ -117,7 +155,7 @@ func EditarTatuagem(client *supabase.Client) gin.HandlerFunc {
 
 		// Atualize o registro no banco de dados
 		var results []models.Tatuagem
-	
+
 		errUpdate := client.DB.From("tatuagens").Update(tatuagemAtual).Eq("id", id).Execute(&results)
 
 		if errUpdate != nil {

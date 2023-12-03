@@ -123,3 +123,8 @@ type Tatuagem struct {
 	Estilo     string  `json:"estilo"`
 	TatuadorId string  `json:"tatuador_id"`
 }
+
+type Favoritos struct {
+	UsuarioId  string `json:"usuario_id"`
+	TatuagemId string `json:"tatuagem_id"`
+}
