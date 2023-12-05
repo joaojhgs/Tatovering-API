@@ -81,6 +81,8 @@ type UsuarioView struct {
 	Status          string `json:"status"`
 	Endereco        string `json:"endereco"`
 	TatuadorId      string `json:"tatuador_id"`
+	EstudioId       string `json:"estudio_id"`
+	IsProprietario  bool   `json:"is_proprietario"`
 }
 
 type Tatuador struct {
