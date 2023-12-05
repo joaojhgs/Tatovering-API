@@ -14,6 +14,12 @@ import (
 	supabase "github.com/nedpals/supabase-go"
 )
 
+func VerAgendamentosUsuario(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fmt.Println("Ver agendamentos usuário")
+	}
+}
+
 func EfetuarAgendamentoUsuario(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Extrair token do cabeçalho da autorização

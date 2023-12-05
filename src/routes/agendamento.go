@@ -11,18 +11,15 @@ import (
 func SetupAgendamentosRoutes(router *gin.Engine, client *supabase.Client) {
 	estudioGroup := router.Group("agendamentos")
 	{
-		estudioGroup.GET("", controllers.EfetuarAgendamentoUsuario(client))
-		estudioGroup.GET(":id", controllers.GetByIdEstudio(client))
+		estudioGroup.GET(
+			"",
+			middlewares.JwtTokenCheck(client), 
+			controllers.VerAgendamentosUsuario(client),
+		)
 		estudioGroup.POST(
 			"",
 			middlewares.JwtTokenCheck(client),
 			controllers.EfetuarAgendamentoUsuario(client),
-		)
-		estudioGroup.PATCH(
-			"/:id",
-		)
-		estudioGroup.DELETE(
-			"/:id",
 		)
 	}
 }
