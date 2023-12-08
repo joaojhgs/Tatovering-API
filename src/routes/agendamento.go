@@ -13,8 +13,13 @@ func SetupAgendamentosRoutes(router *gin.Engine, client *supabase.Client) {
 	{
 		estudioGroup.GET(
 			"",
-			middlewares.JwtTokenCheck(client), 
-			controllers.VerAgendamentosUsuario(client),
+			middlewares.JwtTokenCheck(client),
+			controllers.ObterAgendamentosUsuario(client),
+		)
+		estudioGroup.GET(
+			"tatuador",
+			middlewares.JwtTokenCheck(client),
+			controllers.ObterAgendamentosTatuador(client),
 		)
 		estudioGroup.POST(
 			"",

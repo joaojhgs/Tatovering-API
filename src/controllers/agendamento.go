@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"reflect"
 	extract "tatovering/src/middlewares"
+	models2 "tatovering/src/models"
 	models "tatovering/src/models/cadastros"
+	modelsView "tatovering/src/models/visualizacao"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -14,9 +16,99 @@ import (
 	supabase "github.com/nedpals/supabase-go"
 )
 
-func VerAgendamentosUsuario(client *supabase.Client) gin.HandlerFunc {
+func ObterAgendamentosTatuador(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		token, erroToken := extract.ExtractBearerToken(c.GetHeader("Authorization"))
+		if erroToken != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": erroToken.Error()})
+			return
+		}
+
+		claims, err := decodeToken(token)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		subClaim, ok := claims["sub"]
+		if !ok {
+			// Lidar com a ausência da chave "user"
+			fmt.Println("Chave 'user' não encontrada nas reivindicações.")
+			// ...
+			return
+		}
+
+		usuarioIdToken, ok := subClaim.(string)
+		if !ok {
+			// Lidar com o caso em que o valor não é uma string
+			fmt.Println("Valor da chave 'sub' não é uma string.")
+			// ...
+			return
+		}
+
+		var dadosTatuador models2.Tatuador
+
+		var erroGetDadosTatuador = client.DB.From("tatuadores").Select("*").Single().Eq("usuario_id", usuarioIdToken).Execute(&dadosTatuador)
+		if erroGetDadosTatuador != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": erroGetDadosTatuador.Error()})
+			return
+		}
+
+		fmt.Println(55, dadosTatuador.Id)
+
+		var listaAgendamentos []modelsView.AgendamentoUsuario
+
+		var erroGetAgendamentos = client.DB.From("agendamentos").Select("*").Eq("tatuador_id", dadosTatuador.Id).Execute(&listaAgendamentos)
+		if erroGetAgendamentos != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, listaAgendamentos)
+	}
+}
+
+func ObterAgendamentosUsuario(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		token, erroToken := extract.ExtractBearerToken(c.GetHeader("Authorization"))
+		if erroToken != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": erroToken.Error()})
+			return
+		}
 		fmt.Println("Ver agendamentos usuário")
+
+		claims, err := decodeToken(token)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		subClaim, ok := claims["sub"]
+		if !ok {
+			// Lidar com a ausência da chave "user"
+			fmt.Println("Chave 'user' não encontrada nas reivindicações.")
+			// ...
+			return
+		}
+
+		usuarioIdToken, ok := subClaim.(string)
+		if !ok {
+			// Lidar com o caso em que o valor não é uma string
+			fmt.Println("Valor da chave 'sub' não é uma string.")
+			// ...
+			return
+		}
+
+		var listaAgendamentos []modelsView.AgendamentoUsuario
+
+		var erroGetAgendamentos = client.DB.From("agendamentos").Select("*").Eq("cliente_id", usuarioIdToken).Execute(&listaAgendamentos)
+		if erroGetAgendamentos != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, listaAgendamentos)
 	}
 }
 
@@ -99,8 +191,10 @@ func EfetuarAgendamentoUsuario(client *supabase.Client) gin.HandlerFunc {
 		tatuadorId := agendamentoUsuarioMap["tatuador_id"]
 		estudioId := agendamentoUsuarioMap["estudio_id"]
 		tatuagemId := servicoUsuarioMap["tatuagem_id"]
+		objetivo := servicoUsuarioMap["objetivo"]
 
 		tatuagemIdString, ok := tatuagemId.(string)
+		objetivoString, ok := objetivo.(string)
 
 		str, ok := tatuadorId.(string)
 
@@ -146,6 +240,7 @@ func EfetuarAgendamentoUsuario(client *supabase.Client) gin.HandlerFunc {
 		servicoUsuario.TatuadorId = str
 		servicoUsuario.EstudioId = str2
 		servicoUsuario.TatuagemId = tatuagemIdString
+		servicoUsuario.Objetivo = objetivoString
 
 		resultServico.Id = servicoid.String()
 

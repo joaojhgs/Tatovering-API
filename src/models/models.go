@@ -42,7 +42,6 @@ type EstudioPost struct {
 	Endereco               string  `json:"endereco"`
 	ImagemPerfil           string  `json:"imagem_perfil"`
 	ImagemCapa             string  `json:"imagem_capa"`
-	ProprietarioId         string  `json:"proprietario_id"`
 	HorarioDeFuncionamento *struct {
 		Segunda []string `json:"segunda"`
 		Terca   []string `json:"terca"`
@@ -70,6 +69,7 @@ type Usuario struct {
 	Rg              string `json:"rg"`
 	Status          string `json:"status"`
 	Endereco        string `json:"endereco"`
+	Email           string `json:"email"`
 }
 
 type UsuarioView struct {
@@ -109,7 +109,6 @@ type TatuadorPost struct {
 	Tipo           string   `json:"tipo"`
 	ImgemPerfil    string   `json:"imagem_perfil"`
 	ImgemCapa      string   `json:"imagem_capa"`
-	UsuarioId      string   `json:"usuario_id"`
 	RedesSociais   *struct {
 		Instagram string `json:"instagram"`
 		X         string `json:"x"`

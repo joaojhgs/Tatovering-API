@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	extract "tatovering/src/middlewares"
 	"tatovering/src/models"
 
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,31 @@ func GetById(client *supabase.Client) gin.HandlerFunc {
 
 func CadastrarUsuario(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		token, erroToken := extract.ExtractBearerToken(c.GetHeader("Authorization"))
+		if erroToken != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": erroToken.Error()})
+			return
+		}
+		fmt.Println("Ver agendamentos usuário")
+
+		claims, err := decodeToken(token)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		fmt.Println(222, claims)
+
+		email, ok := claims["email"]
+		if !ok {
+			// Lidar com a ausência da chave "user"
+			fmt.Println("Chave 'user' não encontrada nas reivindicações.")
+			// ...
+			return
+		}
+
+		fmt.Println(333, email)
+
 		var usuario models.Usuario
 
 		if errBind := c.ShouldBindJSON(&usuario); errBind != nil {
