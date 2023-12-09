@@ -7,6 +7,7 @@ type CadastroServicoUsuario struct {
 	EstudioId         string  `json:"estudio_id"`
 	TatuagemId        string  `json:"tatuagem_id"`
 	Tipo              string  `json:"tipo"`
+	Objetivo          string  `json:"objetivo"`
 	Descricao         string  `json:"descricao"`
 	Valor             float64 `json:"valor"`
 	QtdeSessoes       int64   `json:"qtde_sessoes"`
