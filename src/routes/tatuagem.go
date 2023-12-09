@@ -22,7 +22,7 @@ func SetupTatuagemRoutes(router *gin.Engine, client *supabase.Client) {
 			controllers.GetArtByTatuadorId(client),
 		)
 		tatuagemGroup.POST(
-			"/",
+			"",
 			middlewares.JwtTokenCheck(client),
 			controllers.CadastrarTatuagem(client),
 		)

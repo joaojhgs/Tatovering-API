@@ -70,6 +70,7 @@ type Usuario struct {
 	Rg              string `json:"rg"`
 	Status          string `json:"status"`
 	Endereco        string `json:"endereco"`
+	Email           string `json:"email"`
 }
 
 type UsuarioView struct {
