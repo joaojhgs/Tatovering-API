@@ -15,3 +15,10 @@ type AgendamentoUsuario struct {
 	DataAtualizacao  string `json:"data_atualizacao"`
 	DataCancelamento string `json:"data_cancelamento"`
 }
+
+
+type ViewUsuarioAgendamentosTatuador struct {
+	Duracao          int    `json:"duracao"`
+	DataInicio       string `json:"data_inicio"`
+	DataTermino      string `json:"data_termino"`
+}

@@ -16,6 +16,22 @@ import (
 	supabase "github.com/nedpals/supabase-go"
 )
 
+func ObterDisponibilidadeTatuador(client *supabase.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tatuadorId := c.Param("tatuador_id")
+
+		var listaAgendamentos []modelsView.ViewUsuarioAgendamentosTatuador
+		err := client.DB.From("agendamentos").Select("*").Eq("tatuador_id", tatuadorId).Eq("status", "AGENDADO").Execute(&listaAgendamentos)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, listaAgendamentos)
+	}
+}
+
 func ObterAgendamentosTatuador(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, erroToken := extract.ExtractBearerToken(c.GetHeader("Authorization"))
