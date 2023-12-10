@@ -75,12 +75,27 @@ func ObterAgendamentosTatuador(client *supabase.Client) gin.HandlerFunc {
 		var listaAgendamentos []modelsView.AgendamentoUsuario
 
 		var erroGetAgendamentos = client.DB.From("agendamentos").Select("*").Eq("tatuador_id", dadosTatuador.Id).Execute(&listaAgendamentos)
+		
 		if erroGetAgendamentos != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, listaAgendamentos)
+		var servico []modelsView.ViewServicoTatuador
+
+		var erroGetServicos = client.DB.From("servicos").Select("*").Eq("tatuador_id", dadosTatuador.Id).Execute(&servico)
+
+		if erroGetServicos != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": erroGetServicos.Error()})
+			return
+		}
+
+		dadosRetorno := gin.H{
+			"agendamento": listaAgendamentos,
+			"servico":    servico,
+		}
+
+		c.JSON(http.StatusOK, dadosRetorno)
 	}
 }
 
