@@ -12,7 +12,7 @@ func SetupAgendamentosRoutes(router *gin.Engine, client *supabase.Client) {
 	estudioGroup := router.Group("agendamentos")
 	{
 		estudioGroup.GET(
-			"tatuador/:tatuador_id",
+			"disponibilidade/:tatuador_id",
 			controllers.ObterDisponibilidadeTatuador(client),
 		)
 		estudioGroup.GET(
