@@ -10,8 +10,8 @@ type AgendamentoUsuario struct {
 	Status           string `json:"status"`
 	Observacao       string `json:"observacao"`
 	DataInicio       string `json:"data_inicio"`
+	DataTermino      string `json:"data_termino"`
 	DataCriacao      string `json:"data_criacao"`
 	DataAtualizacao  string `json:"data_atualizacao"`
 	DataCancelamento string `json:"data_cancelamento"`
-	DataTermino      string `json:"data_termino"`
 }

@@ -10,4 +10,5 @@ type CadastroAgendamentoUsuario struct {
 	Status     string `json:"status"`
 	Observacao string `json:"observacao"`
 	DataInicio string `json:"data_inicio"`
+	DataTermino string `json:"data_termino"`
 }

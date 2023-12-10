@@ -190,8 +190,13 @@ func EfetuarAgendamentoUsuario(client *supabase.Client) gin.HandlerFunc {
 
 		tatuadorId := agendamentoUsuarioMap["tatuador_id"]
 		estudioId := agendamentoUsuarioMap["estudio_id"]
+		dataInicio := agendamentoUsuarioMap["data_inicio"]
+		dataTermino := agendamentoUsuarioMap["data_termino"]
 		tatuagemId := servicoUsuarioMap["tatuagem_id"]
 		objetivo := servicoUsuarioMap["objetivo"]
+
+		dataInicioString, ok := dataInicio.(string)
+		dataTerminoString, ok := dataTermino.(string)
 
 		tatuagemIdString, ok := tatuagemId.(string)
 		objetivoString, ok := objetivo.(string)
@@ -214,6 +219,8 @@ func EfetuarAgendamentoUsuario(client *supabase.Client) gin.HandlerFunc {
 		agendamentoUsuario.ServicoId = servicoid.String()
 		agendamentoUsuario.TatuadorId = str
 		agendamentoUsuario.EstudioId = str2
+		agendamentoUsuario.DataInicio = dataInicioString
+		agendamentoUsuario.DataTermino = dataTerminoString
 
 		// Executar a inserção no banco de dados
 		var result models.CadastroAgendamentoUsuario
