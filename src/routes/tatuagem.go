@@ -22,7 +22,6 @@ func SetupTatuagemRoutes(router *gin.Engine, client *supabase.Client) {
 			controllers.GetArtByTatuadorId(client),
 		)
 		tatuagemGroup.GET("favoritos/:id",
-			middlewares.JwtTokenCheck(client),
 			controllers.GetFavoritos(client),
 		)
 		tatuagemGroup.POST(
@@ -31,7 +30,6 @@ func SetupTatuagemRoutes(router *gin.Engine, client *supabase.Client) {
 		)
 		tatuagemGroup.POST(
 			"/",
-			middlewares.JwtTokenCheck(client),
 			controllers.CadastrarTatuagem(client),
 		)
 		tatuagemGroup.PATCH(
@@ -41,7 +39,6 @@ func SetupTatuagemRoutes(router *gin.Engine, client *supabase.Client) {
 		)
 		tatuagemGroup.DELETE(
 			"favoritos",
-			middlewares.JwtTokenCheck(client),
 			controllers.DeleteFavorito(client),
 		)
 		tatuagemGroup.DELETE(
