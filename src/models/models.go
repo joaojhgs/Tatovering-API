@@ -116,6 +116,7 @@ type Tatuador struct {
 type TatuadorPost struct {
 	Nome           string   `json:"nome"`
 	Experiencia    int      `json:"experiencia"`
+	EstudioId      string   `json:"estudio_id"`
 	EstiloTatuagem []string `json:"estilo_tatuagem"`
 	Status         string   `json:"status"`
 	Tipo           string   `json:"tipo"`
