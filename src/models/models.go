@@ -73,6 +73,16 @@ type Usuario struct {
 	Email           string `json:"email"`
 }
 
+type UsuarioPost struct {
+	Nome            string `json:"nome"`
+	TelefoneCelular string `json:"telefone_celular"`
+	Cpf             string `json:"cpf"`
+	Rg              string `json:"rg"`
+	Status          string `json:"status"`
+	Endereco        string `json:"endereco"`
+	Email           string `json:"email"`
+}
+
 type UsuarioView struct {
 	Id              string `json:"id"`
 	Nome            string `json:"nome"`

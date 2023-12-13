@@ -55,7 +55,7 @@ func CadastrarUsuario(client *supabase.Client) gin.HandlerFunc {
 
 		fmt.Println(333, email)
 
-		var usuario models.Usuario
+		var usuario models.UsuarioPost
 
 		if errBind := c.ShouldBindJSON(&usuario); errBind != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": errBind.Error()})
