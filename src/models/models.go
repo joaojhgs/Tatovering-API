@@ -130,6 +130,14 @@ type TatuadorPost struct {
 }
 
 type Tatuagem struct {
+	Imagem     string  `json:"imagem"`
+	Preco      float64 `json:"preco"`
+	Tamanho    int     `json:"tamanho"`
+	Cor        string  `json:"cor"`
+	Estilo     string  `json:"estilo"`
+	TatuadorId string  `json:"tatuador_id"`
+}
+type TatuagemGet struct {
 	Id         string  `json:"id"`
 	Imagem     string  `json:"imagem"`
 	Preco      float64 `json:"preco"`

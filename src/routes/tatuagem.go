@@ -32,7 +32,7 @@ func SetupTatuagemRoutes(router *gin.Engine, client *supabase.Client) {
 		)
 		tatuagemGroup.POST(
 			"",
-			middlewares.JwtTokenCheck(client),
+			// middlewares.JwtTokenCheck(client),
 			controllers.CadastrarTatuagem(client),
 		)
 		tatuagemGroup.PATCH(

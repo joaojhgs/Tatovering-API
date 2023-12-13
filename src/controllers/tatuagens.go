@@ -92,7 +92,7 @@ func GetByIdTatuagem(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tatuagemId := c.Param("id")
 
-		var results []models.Tatuagem
+		var results []models.TatuagemGet
 
 		err := client.DB.From("tatuagens").Select("*").Eq("id", tatuagemId).Execute(&results)
 
@@ -107,7 +107,7 @@ func GetByIdTatuagem(client *supabase.Client) gin.HandlerFunc {
 
 func ListagemTatuagem(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var listaTatuagens []models.Tatuagem
+		var listaTatuagens []models.TatuagemGet
 		err := client.DB.From("tatuagens").Select("*").Execute(&listaTatuagens)
 
 		if err != nil {
