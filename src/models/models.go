@@ -88,6 +88,7 @@ type UsuarioView struct {
 type Tatuador struct {
 	Id             string   `json:"id"`
 	Nome           string   `json:"nome"`
+	EstudioId      string   `json:"estudio_id"`
 	Experiencia    int      `json:"experiencia"`
 	EstiloTatuagem []string `json:"estilo_tatuagem"`
 	Status         string   `json:"status"`
