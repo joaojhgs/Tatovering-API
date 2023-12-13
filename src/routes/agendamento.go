@@ -26,6 +26,11 @@ func SetupAgendamentosRoutes(router *gin.Engine, client *supabase.Client) {
 			controllers.ObterAgendamentosTatuador(client),
 		)
 		estudioGroup.POST(
+			"tatuador",
+			// middlewares.JwtTokenCheck(client),
+			controllers.AgendarCliente(client),
+		)
+		estudioGroup.POST(
 			"",
 			middlewares.JwtTokenCheck(client),
 			controllers.EfetuarAgendamentoUsuario(client),

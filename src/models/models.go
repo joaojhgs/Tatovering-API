@@ -63,6 +63,7 @@ type EstudioPost struct {
 }
 
 type Usuario struct {
+	Id              string `json:"id"`
 	Nome            string `json:"nome"`
 	TelefoneCelular string `json:"telefone_celular"`
 	Cpf             string `json:"cpf"`

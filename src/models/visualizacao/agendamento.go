@@ -8,6 +8,7 @@ type AgendamentoUsuario struct {
 	EstudioId        string `json:"estudio_id"`
 	Duracao          int    `json:"duracao"`
 	Status           string `json:"status"`
+	Email           string `json:"email"`
 	Observacao       string `json:"observacao"`
 	DataInicio       string `json:"data_inicio"`
 	DataTermino      string `json:"data_termino"`
