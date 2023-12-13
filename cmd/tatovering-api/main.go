@@ -30,6 +30,8 @@ func main() {
 	routes.SetupTatuadoresRoutes(router, client)
 	routes.SetupTatuagemRoutes(router, client)
 	routes.SetupEstudiosRoutes(router, client)
+	routes.SetupAgendamentosRoutes(router, client)
+
 
 	port := 8080 // Change to the desired port
 	router.Run(fmt.Sprintf(":%d", port))

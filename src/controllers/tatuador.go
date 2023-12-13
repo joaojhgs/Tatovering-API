@@ -14,16 +14,30 @@ func GetByIdTatuador(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 
-		var tatuador []models.Tatuador
+		var tatuador models.Tatuador
 
 		err := client.DB.From("tatuadores").Select("*").Single().Eq("id", id).Execute(&tatuador)
 
 		if err != nil {
-			c.JSON(http.StatusNoContent, gin.H{"caiu": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"caiu": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, tatuador)
+		var estudio models.Estudio
+
+		erro := client.DB.From("estudios").Select("*").Single().Eq("id", tatuador.EstudioId).Execute(&estudio)
+
+		if erro != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"caiuu": erro.Error()})
+			return
+		}
+
+		dadosRetorno := gin.H{
+			"tatuador": tatuador,
+			"estudio":  estudio,
+		}
+
+		c.JSON(http.StatusOK, dadosRetorno)
 	}
 }
 

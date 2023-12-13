@@ -8,7 +8,7 @@ import (
 	supabase "github.com/nedpals/supabase-go"
 )
 
-func extractBearerToken(header string) (string, error) {
+func ExtractBearerToken(header string) (string, error) {
 	if header == "" {
 		return "", errors.New("Missing authorization header")
 	}
@@ -23,7 +23,7 @@ func extractBearerToken(header string) (string, error) {
 
 func JwtTokenCheck(client *supabase.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		jwtToken, err := extractBearerToken(c.GetHeader("Authorization"))
+		jwtToken, err := ExtractBearerToken(c.GetHeader("Authorization"))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
